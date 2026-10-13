@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito+Sans:wght@400;700;800&family=Oswald:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="css/common.css">
 <link rel="stylesheet" href="css/phone.css">
 </head>
@@ -21,18 +22,23 @@
     <div class="dice-stage"><div id="phoneDice"></div></div>
     <div class="dice-sum num" id="diceSum"></div>
   </div>
+  <div id="mapHost" hidden><div class="map-box" id="phoneMap"></div></div>
   <div id="view2"></div>
 </main>
 <nav id="tabs" hidden>
   <button type="button" data-tab="game" class="on">Spil</button>
   <button type="button" data-tab="props">Ejendomme</button>
+  <button type="button" data-tab="map">Kort</button>
   <button type="button" data-tab="players">Spillere</button>
 </nav>
 <div class="toasts" id="toasts"></div>
 
 <script src="vendor/peerjs.min.js"></script>
+<script src="vendor/leaflet/leaflet.js"></script>
 <script src="js/data.js"></script>
 <script src="js/rules.js"></script>
+<script src="js/regionmap.js"></script>
+<script src="js/map.js"></script>
 <script src="js/net.js"></script>
 <script src="js/dice.js"></script>
 <script src="js/phone.js"></script>

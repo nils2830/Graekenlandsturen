@@ -18,7 +18,7 @@ body.phone{min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,
 #connbar.bad{background:#4a0f18;color:#ffd0d6}
 #connbar button{margin-left:auto}
 #main{padding:14px 16px calc(96px + env(safe-area-inset-bottom,0px));max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
-#tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(3,1fr);background:var(--night-2);border-top:1px solid var(--night-3);padding-bottom:env(safe-area-inset-bottom,0px)}
+#tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);background:var(--night-2);border-top:1px solid var(--night-3);padding-bottom:env(safe-area-inset-bottom,0px)}
 #tabs button{background:none;border:0;color:var(--mist);padding:12px 0 14px;font-weight:800;font-size:.86rem;letter-spacing:.02em}
 #tabs button.on{color:var(--sun)}
 #tabs button .badge{display:inline-block;min-width:8px;height:8px;border-radius:50%;background:var(--sun);margin-left:4px;vertical-align:middle}
@@ -86,3 +86,10 @@ h2.big{margin:2px 0 0;font-family:var(--f-board);font-weight:600;font-size:2rem;
 
 /* Beskeder lige over fanerne, så pengene i toppen altid kan ses */
 .phone .toasts{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+
+/* Kortfanen */
+.mrow-p{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:10px 12px;border:0;border-radius:10px;background:rgba(255,255,255,.05);color:var(--foam);font-weight:700;text-align:left}
+.mrow-p i{width:12px;height:12px;border-radius:50%;border:2px solid #fff}
+.mrow-p small{color:var(--mist);font-weight:700}
+.mrow-p.on{background:rgba(242,193,78,.16);box-shadow:inset 0 0 0 1.5px var(--sun)}
+.phone .card .dist-chip{align-self:flex-start}

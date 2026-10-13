@@ -123,6 +123,40 @@ SPACES.forEach((s, i) => {
   if (s.type === "prop") s.rent = RENT_FACTORS.map(f => niceRound(s.price * f));
 });
 
+/* ---------------- Kort: koordinater (WGS84) ----------------
+   Fundet via Wikipedia, Pleiades og OpenStreetMap og kontrolleret af to
+   uafhængige opslag. Afstande vises i luftlinje fra lejligheden. */
+const HOME = { name: "Staikopoulou 46", geo: [0, 0] };
+const GEO = {
+  // Nafplio (udfyldes med kontrollerede koordinater)
+  arvanitia: null, karathona: null, havn: null, gamlebydel: null, syntagma: null,
+  spyridon: null, bourtzi: null, akronafplia: null, palamidi: null,
+  // Argolis og Korinth
+  tiryns: [37.59944, 22.80000],
+  mykene: [37.73081, 22.75648],
+  epidauros: [37.59611, 23.07917],
+  kanal: [37.93472, 22.98389],
+  // Athen og Piræus
+  agora: [37.97511, 23.72422],
+  monastiraki: [37.97630, 23.72585],
+  plaka: [37.97222, 23.73056],
+  evzoner: [37.97535, 23.73636],
+  piraeus: [37.94599, 23.64242],
+  hefaistos: [37.97562, 23.72139],
+  zeus: [37.96943, 23.73311],
+  stadion: [37.96833, 23.74111],
+  metro: [37.97528, 23.73528],
+  akropolismuseet: [37.96845, 23.72852],
+  parthenon: [37.97156, 23.72658]
+};
+SPACES.forEach(sp => {
+  const key = sp.type === "exile" ? "palamidi" : sp.type === "ostra" ? "agora" : sp.img;
+  if (!GEO[key]) return;
+  sp.geo = GEO[key];
+  sp.geoKey = key;
+});
+SPACES[0].mapName = "Den antikke Agora";
+
 const DECK_INFO = {
   oracle: { name: "Oraklets Spådomme", img: "pythia", color: "#1f2a44",
     fact: "Pythia var præstinde i Apollons tempel i Delfi og gav svar på spørgsmål fra hele den græske verden. Svarene var ofte så gådefulde, at de kunne tolkes på flere måder." },

@@ -18,6 +18,8 @@ let client = null, V = null, tab = "game", connState = "idle";
 let lastToastSeq = null, lastDiceSeq = null, lastPromptId = null, pendingRoll = null, diceAt = 0;
 let lastKey = "", shakeOn = false, lastShake = 0;
 const quizAnswered = {};
+let mapSel = null, pmap = null, lastFocused = undefined;
+const PIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z" fill="#d7263d" stroke="#151515" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.6" fill="#fff"/></svg>';
 const dice = Dice.create($("#phoneDice"));
 const SHAPES = ["▲", "◆", "●", "■"];
 
@@ -100,7 +102,7 @@ function render(force) {
   $("#tabs [data-tab=game]").innerHTML = "Spil" + (myTurnBadge ? '<span class="badge"></span>' : "");
 
   const key = JSON.stringify([tab, code, connState === "no-host", V && [V.you, V.phase, V.prompt, V.spot, V.activity, V.canManage, V.round,
-    V.players.map(p => [p.money, p.online, p.taken, p.bankrupt, p.inExile, p.amnesty]), tab === "game" ? 0 : V.props, V.cur], quizAnswered]);
+    V.players.map(p => [p.money, p.online, p.taken, p.bankrupt, p.inExile, p.amnesty]), tab === "game" ? 0 : V.props, V.cur], quizAnswered, mapSel]);
   if (!force && key === lastKey) return;
   lastKey = key;
 
@@ -111,6 +113,7 @@ function render(force) {
   else if (V.phase === "lobby") [top, bottom] = lobbyView();
   else if (tab === "props") [top, bottom] = propsView();
   else if (tab === "players") [top, bottom] = playersView();
+  else if (tab === "map") [top, bottom] = mapView();
   else if (V.phase === "over") [top, bottom] = overView();
   else if (V.prompt) [top, bottom, showDice] = promptView(V.prompt);
   else [top, bottom, showDice] = waitView();
@@ -118,6 +121,9 @@ function render(force) {
   $("#view").innerHTML = top;
   $("#view2").innerHTML = bottom;
   $("#diceHost").hidden = !showDice;
+  const showMap = tab === "map" && !!V && V.you !== null && V.you !== undefined && (V.phase === "play" || V.phase === "over");
+  $("#mapHost").hidden = !showMap;
+  if (showMap) ensureMap();
   bindHandlers();
 }
 
@@ -258,6 +264,7 @@ function spaceCard(i, note, noteKind) {
     if (ps && ps.owner !== null) { const o = V.players[ps.owner]; extra += `<div class="owner-tag">${coinHTML(o)}<span>Ejes af ${esc(o.name)}${ps.mortgaged ? " · pantsat" : ""}</span></div>`; }
     else extra += `<div class="owner-tag">Pris ${fmt(sp.price)}</div>`;
   }
+  if (MapKit.geoOf(i)) extra = `<button type="button" class="dist-chip" data-mapfocus="${i}">${PIN_SVG}<span>${esc(MapKit.distanceText(i))}</span><span class="chip-act">Vis på kort</span></button>` + extra;
   return `<div class="card">
     <div class="card-band" style="background:${bandBg};color:${bandFg}"><small>${esc(g ? g.name : "")}</small><b>${esc(sp.name)}</b></div>
     <div class="card-img" style="background-image:url(${imgSrc(sp.img)})"></div>
@@ -379,10 +386,51 @@ function bindHandlers() {
     send({ t: "manage", act: b.dataset.manage, sp: +b.dataset.sp });
     b.disabled = true;
   }));
+  document.querySelectorAll("[data-mapfocus]").forEach(b => b.addEventListener("click", () => { mapSel = +b.dataset.mapfocus; tab = "map"; render(true); window.scrollTo(0, 0); }));
+  const ma = $("[data-mapall]");
+  if (ma) ma.addEventListener("click", () => { mapSel = null; lastFocused = null; if (pmap) pmap.overview(); render(true); });
+  const mn = $("[data-mapnaf]");
+  if (mn) mn.addEventListener("click", () => { mapSel = null; lastFocused = null; if (pmap) pmap.overview(true); render(true); });
   document.querySelectorAll("[data-goto]").forEach(b => b.addEventListener("click", () => { tab = b.dataset.goto; render(true); window.scrollTo(0, 0); }));
 }
 
 document.querySelectorAll("#tabs button").forEach(b => b.addEventListener("click", () => { tab = b.dataset.tab; render(true); window.scrollTo(0, 0); }));
+
+/* ---------------- Kort ---------------- */
+function mapView() {
+  const head = `<div class="panel"><div class="label">Kort over turen</div><h2 class="big">Hvor er det henne?</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+      <span class="dist-chip">${PIN_SVG}<span>Lejligheden: ${esc(HOME.name)}</span></span>
+      <button class="btn small ghost" type="button" data-mapall>Hele turen</button>
+      <button class="btn small ghost" type="button" data-mapnaf>Kun Nafplio</button>
+    </div></div>`;
+  let sel = "";
+  if (mapSel !== null && SPACES[mapSel]) {
+    const sp = SPACES[mapSel];
+    sel = `<div class="card">
+      <div class="card-band" style="background:${sp.group ? GROUPS[sp.group].color : "#0d5eaf"};color:${sp.group ? textOn(sp.group) : "#fff"}"><small>${esc(MapKit.distanceText(mapSel))}</small><b>${esc(sp.name)}</b></div>
+      <div class="card-body" style="flex-direction:row;gap:12px;align-items:flex-start">
+        <div style="flex:0 0 34%;aspect-ratio:1;border-radius:8px;background:#cfd8e3 center/cover url(${imgSrc(sp.img, true)})"></div>
+        <div class="card-text" style="font-size:.92em">${esc(sp.fact || "")}</div>
+      </div></div>`;
+  }
+  const list = MapKit.PLACES.slice().sort((a, b) => MapKit.distKm(HOME.geo, a.geo) - MapKit.distKm(HOME.geo, b.geo)).map(p =>
+    `<button type="button" class="mrow-p ${p.i === mapSel ? "on" : ""}" data-mapfocus="${p.i}"><i style="background:${p.color}"></i><span>${esc(p.name)}</span><small>${esc(MapKit.fmtDist(MapKit.distKm(HOME.geo, p.geo)))}</small></button>`).join("");
+  return [head, `<div class="stack">${sel}<div class="panel stack" style="gap:6px"><div class="label">Alle steder, nærmest først</div>${list}</div></div>`];
+}
+function ensureMap() {
+  if (!pmap) {
+    pmap = MapKit.interactive($("#phoneMap"), { onSelect: i => { mapSel = i; lastFocused = i; render(true); } });
+    if (!pmap) return;
+  }
+  setTimeout(() => {
+    pmap.refresh();
+    if (mapSel !== lastFocused) {
+      lastFocused = mapSel;
+      if (mapSel === null) pmap.overview(); else pmap.focus(mapSel);
+    }
+  }, 30);
+}
 
 /* ---------------- Ryst for at kaste ---------------- */
 function onMotion(e) {

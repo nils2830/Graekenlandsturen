@@ -30,6 +30,12 @@ python3 -m http.server 8000
 
 Åbn `http://localhost:8000/index.html?lokal=1` i én fane og `http://localhost:8000/telefon.html?lokal=1&cid=test1` i en anden. Med `?lokal=1` taler fanerne sammen inde i browseren, så man kan teste uden internet og uden telefoner.
 
+## Kort
+
+Hvert sted på brættet har en markering med afstanden fra lejligheden på Staikopoulou 46 i luftlinje. På telefonen kan man trykke **Vis på kort** eller åbne fanen **Kort** og se stedet på et gadekort sammen med lejligheden. På skærmen vises kortet først, når man trykker på afstanden på et kort; knappen **Kort** i panelet viser hele turen.
+
+Koordinaterne står i `js/data.js` under `GEO`. Gadekortet bruger OpenStreetMap og CARTO og kræver internet; oversigtskortet er tegnet ud fra Natural Earth og virker altid.
+
 ## Billeder
 
 Alle billeder er rigtige fotos og malerier fra Wikimedia Commons. Fotograf, licens og link til originalen står på siden `kreditering.html`, som også kan åbnes fra spillet.
@@ -54,4 +60,5 @@ Billederne hentes af GitHub Action-workflowet `Hent billeder` ud fra `img/manife
 | `js/rules.js` | Regler for leje, byggeri og pantsætning |
 | `js/net.js` | Forbindelsen mellem skærm og telefoner (PeerJS) |
 | `js/dice.js` | 3D-terningerne |
-| `vendor/` | PeerJS 1.5.4 og qrcode-generator 1.4.4 (MIT-licens) |
+| `js/map.js`, `js/regionmap.js` | Kort, afstande og oversigtskortet |
+| `vendor/` | PeerJS 1.5.4 og qrcode-generator 1.4.4 (MIT-licens), Leaflet 1.9.4 (BSD-2) |

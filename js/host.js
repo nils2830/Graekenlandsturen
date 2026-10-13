@@ -31,7 +31,8 @@ const state = {
   feed: [],
   ranking: null
 };
-const H = { code: null, net: null, netStatus: "offline", conns: new Map(), forceControl: false, resume: false, looping: false };
+const H = { code: null, net: null, netStatus: "offline", conns: new Map(), forceControl: false, resume: false, looping: false, showMap: false, spotMap: null };
+try { H.showMap = localStorage.getItem("polis-kort-paa-skaerm") === "1"; } catch (e) { /* standard: skjult */ }
 let promptSeq = 0, toastSeq = 0;
 const cur = () => state.players[state.current];
 const active = () => state.players.filter(p => !p.bankrupt);
@@ -853,11 +854,21 @@ function spaceCardHTML(i, note, noteKind) {
       <div class="card-body" style="flex:1 1 45%">
         <div class="card-text">${esc(sp.fact)}</div>
         ${sp.tip ? `<div class="card-tip"><b>Turisttip:</b> ${esc(sp.tip)}</div>` : ""}
+        ${mapPartHTML(i)}
         ${extra}
       </div>
     </div>
     ${note ? `<div class="card-body" style="padding-top:0"><div class="card-effect ${noteKind || ""}">${esc(note)}</div></div>` : ""}
   </div>`;
+}
+const PIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7.2 7-12.5A7 7 0 0 0 5 9.5C5 14.8 12 22 12 22z" fill="#d7263d" stroke="#151515" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.6" fill="#fff"/></svg>';
+function mapPartHTML(i) {
+  const geo = MapKit.geoOf(i);
+  if (!geo) return "";
+  const near = MapKit.distKm(HOME.geo, geo) < 6;
+  const chip = `<button type="button" class="dist-chip" data-maptoggle title="${H.showMap ? "Skjul kortet" : "Vis stedet på et kort"}">${PIN_SVG}<span>${esc(MapKit.distanceText(i))}</span><span class="chip-act">${H.showMap ? "Skjul kort" : "Vis kort"}</span></button>`;
+  if (!H.showMap) return `<div>${chip}</div>`;
+  return `<div class="spot-mapwrap">${chip}${near ? `<div class="spot-map" data-focus="${i}"></div>` : `<div class="spot-rmap">${MapKit.regionSVG(i)}</div>`}</div>`;
 }
 function cardHTML(deck, idx) {
   const card = (deck === "oracle" ? ORACLE_CARDS : GUNST_CARDS)[idx];
@@ -946,9 +957,10 @@ function renderSpot() {
   else if (s.k === "quiz") html = quizHTML(s);
   else if (s.k === "msg") html = msgHTML(s);
   else if (s.k === "over") html = overHTML(s);
-  const key = JSON.stringify(s) + (s.k === "space" ? JSON.stringify(state.props[s.i] || null) : "");
+  const key = JSON.stringify(s) + (s.k === "space" ? JSON.stringify(state.props[s.i] || null) + H.showMap : "");
   if (key === lastSpotKey && s.k !== "quiz") return;
   lastSpotKey = key;
+  if (H.spotMap) { H.spotMap.map.remove(); H.spotMap = null; }
   el.hidden = false;
   if (s.k === "quiz" && el.firstElementChild && el.dataset.q === String(s.qi) + s.phase) {
     el.innerHTML = html;
@@ -957,6 +969,31 @@ function renderSpot() {
   el.dataset.q = s.k === "quiz" ? String(s.qi) + s.phase : "";
   const again = $("#againBtn");
   if (again) again.addEventListener("click", () => showSetup());
+  const tog = el.querySelector("[data-maptoggle]");
+  if (tog) tog.addEventListener("click", toggleSpotMap);
+  const mapEl = el.querySelector(".spot-map");
+  if (mapEl) {
+    H.spotMap = MapKit.interactive(mapEl, { static: true });
+    if (H.spotMap) { H.spotMap.refresh(); H.spotMap.focus(+mapEl.dataset.focus); }
+  }
+}
+function toggleSpotMap() {
+  H.showMap = !H.showMap;
+  try { localStorage.setItem("polis-kort-paa-skaerm", H.showMap ? "1" : "0"); } catch (e) { /* ignorer */ }
+  lastSpotKey = "";
+  renderSpot();
+}
+function openMapModal(focusIdx) {
+  openModal("Kort over turen", `<div class="map-box" id="modalMap" style="height:min(62vh,560px)"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><span class="dist-chip">${PIN_SVG}<span>Lejligheden: ${esc(HOME.name)}</span></span>
+    <button type="button" class="btn small" id="mmAll">Hele turen</button><button type="button" class="btn small" id="mmNaf">Kun Nafplio</button></div>`,
+    [{ label: "Luk", v: 0, cls: "primary" }], body => {
+      const m = MapKit.interactive(body.querySelector("#modalMap"), { wheel: true });
+      if (!m) return;
+      setTimeout(() => { m.refresh(); if (focusIdx !== undefined) m.focus(focusIdx); else m.overview(); }, 30);
+      body.querySelector("#mmAll").addEventListener("click", () => m.overview());
+      body.querySelector("#mmNaf").addEventListener("click", () => m.overview(true));
+    });
 }
 setInterval(() => { if (state.spot && state.spot.k === "quiz" && state.spot.phase === "ask") renderSpot(); }, 500);
 
@@ -1079,7 +1116,9 @@ function previewSpace(i) {
   const text = sp.fact || DECK_INFO[sp.type] && DECK_INFO[sp.type].fact || "";
   openModal(esc(sp.name), `<img src="${imgSrc(sp.img)}" alt="" style="border-radius:10px;width:100%;max-height:300px;object-fit:cover">
     <p style="margin:0">${esc(text)}</p>${sp.tip ? `<div class="card-tip"><b>Turisttip:</b> ${esc(sp.tip)}</div>` : ""}
-    ${isOwnable(i) ? rentGrid(i, -1) : ""}`, [{ label: "Luk", v: 0, cls: "primary" }]);
+    ${MapKit.geoOf(i) ? `<div><span class="dist-chip">${PIN_SVG}<span>${esc(MapKit.distanceText(i))}</span></span></div>` : ""}
+    ${isOwnable(i) ? rentGrid(i, -1) : ""}`, MapKit.geoOf(i) ? [{ label: "Vis på kort", v: "map" }, { label: "Luk", v: 0, cls: "primary" }] : [{ label: "Luk", v: 0, cls: "primary" }])
+    .then(v => { if (v === "map") openMapModal(i); });
 }
 
 function openHostManager() {
@@ -1292,6 +1331,7 @@ function init() {
   });
   $("#controlBtn").addEventListener("click", () => { H.forceControl = !H.forceControl; renderPanel(); });
   $("#manageBtn").addEventListener("click", openHostManager);
+  $("#mapBtn").addEventListener("click", () => openMapModal());
   window.addEventListener("resize", fitBoard);
   if (window.ResizeObserver) new ResizeObserver(fitBoard).observe($("#boardWrap"));
   window.addEventListener("beforeunload", e => { if (state.phase === "play") { save(); e.preventDefault(); e.returnValue = ""; } });

@@ -207,3 +207,11 @@ body.host{height:100vh;overflow:hidden;background:radial-gradient(ellipse at 30%
 /* Beskeder på skærmen vises nederst i panelet, så de ikke dækker brættet */
 .host .toasts{left:auto;right:16px;top:auto;bottom:16px;transform:none;width:400px}
 @media (max-width:1000px){.host .toasts{right:50%;transform:translateX(50%);width:min(92vw,460px)}}
+
+/* Kort i spotlight-kortet (kun når det er slået til) */
+.spot-mapwrap{display:flex;flex-direction:column;gap:.45em}
+.spot-map{height:8.6em;border-radius:.5em;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.spot-map .leaflet-control-attribution{font-size:8px;line-height:1.2;padding:0 3px}
+.spot-rmap .regionmap{max-height:8.6em;object-fit:contain}
+#spot .dist-chip{font-size:.8em}
+.dist-chip .chip-act{margin-left:.35em;padding-left:.55em;border-left:1.5px solid #b8d3ee;font-weight:700;opacity:.85}

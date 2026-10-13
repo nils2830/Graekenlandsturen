@@ -59,30 +59,38 @@ img{max-width:100%}
 .coin span{font-size:1.05em;transform:translateY(.03em)}
 
 /* ---------- 3D-terninger ---------- */
-.dice-pair{display:flex;gap:calc(var(--ds,64px)*.45);align-items:center;justify-content:center;--ds:64px}
-.die-wrap{width:var(--ds);height:var(--ds);perspective:calc(var(--ds)*7);position:relative}
-.die-cube{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 1.15s cubic-bezier(.17,.89,.32,1.08)}
+/* En massiv kube: seks sider og tre indre kerneplader, der fylder hjørnerne ud. */
+.dice-pair{display:flex;gap:calc(var(--ds,64px)*.5);align-items:center;justify-content:center;--ds:64px}
+.die-wrap{width:var(--ds);height:var(--ds);perspective:calc(var(--ds)*9);position:relative}
+.die-cube{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 1.15s cubic-bezier(.3,.36,.25,1.04);will-change:transform}
 .die-cube.no-anim{transition:none}
+.die-cube>div{position:absolute;inset:0}
+.core{background:#d9d4c7;border-radius:4%}
+.cx{transform:rotateY(90deg)}
+.cy{transform:rotateX(90deg)}
 .face{
-  position:absolute;inset:0;border-radius:18%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
-  padding:15%;background:radial-gradient(circle at 30% 25%,#ffffff 0%,#f1efe8 60%,#dedad0 100%);
-  box-shadow:inset 0 0 calc(var(--ds)*.06) rgba(0,0,0,.25);backface-visibility:hidden
+  border-radius:12%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:14%;
+  background:linear-gradient(145deg,#ffffff 0%,#f6f3ec 45%,#e9e4d8 100%);
+  box-shadow:inset 0 0 0 calc(var(--ds)*.012) rgba(0,0,0,.08),inset 0 calc(var(--ds)*-.05) calc(var(--ds)*.09) rgba(0,0,0,.10),inset 0 calc(var(--ds)*.04) calc(var(--ds)*.06) rgba(255,255,255,.9);
+  backface-visibility:hidden;-webkit-backface-visibility:hidden
 }
 .face i{display:block}
-.face i.pip{width:72%;height:72%;margin:auto;border-radius:50%;background:radial-gradient(circle at 40% 35%,#2f78c8,#0a3f7a);box-shadow:inset 0 .06em .12em rgba(0,0,0,.45)}
-.face.f1 i.pip{background:radial-gradient(circle at 40% 35%,#ff6a6a,#b3121f);width:85%;height:85%}
+.face i.pip{width:74%;height:74%;margin:auto;border-radius:50%;background:radial-gradient(circle at 38% 32%,#3b86d6 0%,#0d5eaf 45%,#073a70 100%);box-shadow:inset 0 calc(var(--ds)*.012) calc(var(--ds)*.02) rgba(0,0,0,.5),0 calc(var(--ds)*.006) 0 rgba(255,255,255,.7)}
+.face.f1 i.pip{background:radial-gradient(circle at 38% 32%,#ff7a7a 0%,#d7263d 50%,#8d0f1f 100%);width:86%;height:86%}
 .f1{transform:translateZ(calc(var(--ds)/2))}
 .f6{transform:rotateY(180deg) translateZ(calc(var(--ds)/2))}
 .f3{transform:rotateY(90deg) translateZ(calc(var(--ds)/2))}
 .f4{transform:rotateY(-90deg) translateZ(calc(var(--ds)/2))}
 .f5{transform:rotateX(90deg) translateZ(calc(var(--ds)/2))}
 .f2{transform:rotateX(-90deg) translateZ(calc(var(--ds)/2))}
-.die-shadow{position:absolute;left:10%;right:10%;bottom:-18%;height:16%;border-radius:50%;background:rgba(0,0,0,.35);filter:blur(4px);z-index:-1}
-.die-wrap.wiggle .die-cube{animation:wiggle .35s ease-in-out infinite}
-@keyframes wiggle{0%,100%{transform:rotateX(-12deg) rotateY(18deg)}50%{transform:rotateX(14deg) rotateY(-16deg) translateY(-6%)}}
+.die-shadow{position:absolute;left:12%;right:12%;bottom:-20%;height:16%;border-radius:50%;background:rgba(0,0,0,.32);filter:blur(5px);z-index:-1}
+.die-wrap.rolling{animation:bob .42s ease-in-out infinite alternate}
+.die-wrap.rolling .die-shadow{animation:bobShadow .42s ease-in-out infinite alternate}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-22%)}}
+@keyframes bobShadow{from{transform:scale(1);opacity:1}to{transform:scale(.7);opacity:.55}}
 .die-wrap.thrown{animation:thrown 1.15s cubic-bezier(.3,.7,.4,1) both}
 .die-wrap.thrown .die-shadow{animation:shadow 1.15s cubic-bezier(.3,.7,.4,1) both}
-@keyframes thrown{0%{transform:translateY(0) scale(1)}22%{transform:translateY(-70%) scale(1.12)}48%{transform:translateY(0) scale(1)}64%{transform:translateY(-18%)}80%{transform:translateY(0)}90%{transform:translateY(-4%)}100%{transform:translateY(0)}}
+@keyframes thrown{0%{transform:translateY(0) scale(1)}22%{transform:translateY(-60%) scale(1.1)}48%{transform:translateY(0) scale(1)}64%{transform:translateY(-16%)}80%{transform:translateY(0)}90%{transform:translateY(-4%)}100%{transform:translateY(0)}}
 @keyframes shadow{0%{transform:scale(1);opacity:1}22%{transform:scale(.55);opacity:.4}48%{transform:scale(1);opacity:1}64%{transform:scale(.85)}100%{transform:scale(1);opacity:1}}
 
 /* ---------- Kort (ejendom, orakel, gunst) ---------- */
@@ -127,5 +135,29 @@ img{max-width:100%}
 
 @media (prefers-reduced-motion:reduce){
   .die-cube{transition:none}
-  .die-wrap.wiggle .die-cube,.die-wrap.thrown,.die-wrap.thrown .die-shadow,.toast{animation:none}
+  .die-wrap.rolling,.die-wrap.rolling .die-shadow,.die-wrap.thrown,.die-wrap.thrown .die-shadow,.toast{animation:none}
 }
+
+/* ---------- Kort ---------- */
+.regionmap{display:block;width:100%;height:auto;border-radius:10px;background:#cfe3f3}
+.rm-land{fill:#f4f1e8}
+.rm-sea{fill:#bcd8ef;stroke:#0d5eaf;stroke-width:1.6;stroke-linejoin:round}
+.rm-town{font-family:var(--f-board);font-weight:600;font-size:26px;fill:#284a6e;letter-spacing:.04em;paint-order:stroke;stroke:#f4f1e8;stroke-width:6px;stroke-linejoin:round}
+.rm-line{stroke:#0d5eaf;stroke-width:5;stroke-dasharray:12 12;stroke-linecap:round}
+.rm-pulse{fill:rgba(215,38,61,.18);stroke:#d7263d;stroke-width:3;transform-box:fill-box;transform-origin:center;animation:rmPulse 1.6s ease-out infinite}
+@keyframes rmPulse{from{transform:scale(.6);opacity:1}to{transform:scale(1.6);opacity:0}}
+.dist-chip{display:inline-flex;align-items:center;gap:.4em;font-weight:800;font-size:.88em;color:#0a3f7a;background:#e6f0fa;border-radius:99px;padding:.3em .8em .3em .5em;line-height:1.2}
+.dist-chip svg{width:1.1em;height:1.1em;flex:0 0 auto}
+button.dist-chip{border:0;cursor:pointer;box-shadow:inset 0 0 0 1.5px #b8d3ee}
+.map-box{position:relative;height:min(56vh,460px);border-radius:14px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.35);background:#cfe3f3}
+.map-box .leaflet-container{height:100%;font-family:var(--f-body);background:#cfe3f3}
+.map-missing{padding:20px;color:var(--ink)}
+.mpin-wrap{background:none;border:0}
+.mpin{display:block;width:26px;height:26px;margin:2px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.45);transition:transform .2s}
+.mpin i{display:block;width:8px;height:8px;margin:6px;border-radius:50%;background:#fff}
+.active .mpin{transform:rotate(-45deg) scale(1.35);border-color:#151515}
+.mhome{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--sun);border:3px solid #151515;box-shadow:0 0 0 6px rgba(242,193,78,.35),0 4px 10px rgba(0,0,0,.4)}
+.mhome svg{width:22px;height:22px}
+.leaflet-tooltip.mtip{font-family:var(--f-body);font-weight:800;font-size:12px;color:var(--ink);border:0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.3);padding:4px 8px}
+.leaflet-tooltip.mtip.home{background:var(--sun)}
+@media (prefers-reduced-motion:reduce){.rm-pulse{animation:none}}
