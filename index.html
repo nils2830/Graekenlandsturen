@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Polis Brætspil</title>
+<style>
+/* Layout: marmorbræt på havblå bund til venstre, mørk sidebjælke med terrakotta-accenter til højre; stakkes lodret på smalle skærme. */
+:root{
+  --sea:#0f2c40;        /* sidebaggrund: Ægæerhavet om natten */
+  --sea-2:#173b54;      /* paneler */
+  --sea-3:#22506f;      /* kanter og hover */
+  --marble:#f5f1e8;     /* felter */
+  --marble-2:#e7e0d1;   /* marmorårer og skygger */
+  --ink:#1f1a16;        /* sortfigur-glasur */
+  --clay:#c15a2a;       /* rødfigur-terrakotta */
+  --clay-2:#a8471c;
+  --gold:#d4a72c;
+  --foam:#e9f1f6;       /* lys tekst på havbund */
+  --muted:#9fb6c6;
+  --good:#3f9b5f;
+  --bad:#c0392b;
+  --font-display:"Palatino Linotype","Book Antiqua",Palatino,"URW Palladio L","P052",Georgia,serif;
+  --font-body:"Gill Sans","Gill Sans MT","Seravek","Trebuchet MS",Calibri,"Segoe UI",sans-serif;
+  --radius:6px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{
+  background:var(--sea);
+  background-image:radial-gradient(ellipse at 30% 20%,#1a4766 0%,var(--sea) 60%);
+  color:var(--foam);font-family:var(--font-body);font-size:15px;line-height:1.45;
+}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- Hovedlayout ---------- */
+#app{display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:16px;height:100%;padding:16px}
+#boardWrap{min-width:0;min-height:0;display:flex;align-items:flex-start;justify-content:center}
+#sidebar{min-width:0;min-height:0;display:flex;flex-direction:column;gap:12px;overflow:auto}
+
+/* ---------- Brættet ---------- */
+#board{
+  position:relative;display:grid;
+  grid-template-columns:1.45fr repeat(7,1fr) 1.45fr;
+  grid-template-rows:1.45fr repeat(7,1fr) 1.45fr;
+  background:var(--ink);border:.35em solid var(--ink);
+  box-shadow:0 18px 50px rgba(0,0,0,.45);
+  font-size:10px;max-width:100%;
+}
+.space{
+  position:relative;overflow:hidden;display:flex;min-width:0;min-height:0;
+  background:linear-gradient(135deg,var(--marble) 0%,#fbf8f2 45%,var(--marble-2) 100%);
+  border:1px solid #b9b0a0;color:var(--ink);cursor:pointer;
+  transition:filter .15s;
+}
+.space:hover{filter:brightness(1.06) saturate(1.1)}
+.space.bottom{flex-direction:column}
+.space.top{flex-direction:column-reverse}
+.space.left{flex-direction:row-reverse}
+.space.right{flex-direction:row}
+.band{flex:0 0 23%;display:flex;align-items:center;justify-content:center;gap:.15em;border-color:var(--ink);border-style:solid;border-width:0}
+.bottom .band{border-bottom-width:1px}
+.top .band{border-top-width:1px}
+.left .band{border-left-width:1px;flex-direction:column}
+.right .band{border-right-width:1px;flex-direction:column}
+.sp-body{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:.35em .25em;text-align:center}
+.sp-name{font-family:var(--font-display);font-weight:700;font-size:1.05em;line-height:1.08;overflow-wrap:anywhere;hyphens:auto}
+.sp-price{font-size:.9em;font-weight:600;color:#4a4036}
+.sp-icon{display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.sp-icon svg{width:2.7em;height:2.7em}
+.left .sp-icon svg,.right .sp-icon svg{width:2.3em;height:2.3em}
+.owner-strip{position:absolute;pointer-events:none}
+.bottom .owner-strip{left:0;right:0;bottom:0;height:.5em}
+.top .owner-strip{left:0;right:0;top:0;height:.5em}
+.left .owner-strip{top:0;bottom:0;left:0;width:.5em}
+.right .owner-strip{top:0;bottom:0;right:0;width:.5em}
+.space.mortgaged .sp-body{opacity:.4}
+.space.mortgaged::after{
+  content:"PANTSAT";position:absolute;left:50%;top:55%;transform:translate(-50%,-50%) rotate(-28deg);
+  font-family:var(--font-display);font-weight:700;font-size:.85em;letter-spacing:.08em;color:var(--bad);
+  border:2px solid var(--bad);padding:0 .25em;background:rgba(255,255,255,.75);pointer-events:none
+}
+.altar{width:.85em;height:.85em;background:var(--marble);border:1.5px solid var(--ink);border-radius:1px}
+.temple{width:2.1em;height:1.5em;display:block}
+.space.special .sp-body{justify-content:center;gap:.25em}
+.space.special .sp-name{font-size:.92em}
+
+/* Hjørner */
+.corner{cursor:pointer}
+.corner .sp-body{justify-content:center;gap:.3em;padding:.5em}
+.corner .sp-name{font-size:1.05em;letter-spacing:.02em}
+.corner .sp-sub{font-size:.88em;line-height:1.15;color:#4a4036}
+.corner .sp-icon svg{width:3.6em;height:3.6em}
+.c-start{background:linear-gradient(135deg,#f7e7b8,#efd38a)}
+.c-truce{background:linear-gradient(135deg,#e5efd9,#cbdcb4)}
+.c-ostra{background:linear-gradient(135deg,#f3d9c9,#e6b79c)}
+.c-exile{background:linear-gradient(135deg,var(--marble),var(--marble-2));display:block}
+.c-exile .visit{position:absolute;left:.5em;bottom:.4em;right:.4em;font-size:.95em;font-weight:600;color:#4a4036;text-align:left}
+.exile-box{
+  position:absolute;right:0;top:0;width:66%;height:66%;
+  background:repeating-linear-gradient(90deg,#3b3129 0 .22em,transparent .22em 1.1em),#c9b9a0;
+  border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);
+  display:flex;align-items:flex-start;justify-content:center;padding-top:.3em
+}
+.exile-box span{background:var(--ink);color:var(--marble);font-family:var(--font-display);font-weight:700;font-size:.8em;letter-spacing:.1em;padding:.05em .4em}
+
+/* Midterfeltet: rødfigur-vase */
+#center{
+  grid-area:2/2/9/9;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2em;
+  background:radial-gradient(circle at 50% 42%,#d36d39 0%,var(--clay) 45%,var(--clay-2) 100%);
+  border:1px solid var(--ink);color:var(--ink);padding:1.5em
+}
+.meander{
+  position:absolute;left:1em;right:1em;height:1.7em;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M0 18.5H18.5V1.5H3.5V14.5H14.5V5.5H7.5V10.5H11' fill='none' stroke='%231f1a16' stroke-width='2.2'/%3E%3C/svg%3E") repeat-x;
+  background-size:auto 100%
+}
+.meander.top{top:1em}
+.meander.bot{bottom:1em;transform:scaleY(-1)}
+.title-gr{font-family:var(--font-display);font-size:5.2em;letter-spacing:.18em;line-height:1;font-weight:700;color:var(--ink);text-shadow:0 2px 0 rgba(255,220,180,.25);margin-right:-.18em}
+.title-sub{font-family:var(--font-display);font-size:1.25em;letter-spacing:.32em;text-transform:uppercase;margin-top:-.4em;font-weight:700}
+.tagline{font-size:1.05em;font-style:italic;max-width:30em;text-align:center;font-family:var(--font-display)}
+.decks{display:flex;gap:2.4em}
+.deck{
+  width:9.5em;height:6.2em;border-radius:.5em;border:2px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.2em;
+  font-family:var(--font-display);font-weight:700;font-size:1em;text-align:center;line-height:1.1;padding:.4em;
+  box-shadow:.25em .25em 0 var(--ink),.5em .5em 0 rgba(31,26,22,.5);transform:rotate(-4deg)
+}
+.deck svg{width:2.2em;height:2.2em}
+.deck.oracle{background:#1f1a16;color:var(--gold)}
+.deck.gunst{background:var(--marble);color:var(--ink);transform:rotate(4deg)}
+.dice-area{display:flex;align-items:center;gap:1em}
+.die{
+  width:4em;height:4em;background:var(--marble);border:2px solid var(--ink);border-radius:.7em;
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:.45em;gap:.1em;
+  box-shadow:0 .3em 0 var(--ink)
+}
+.pip{width:.75em;height:.75em;border-radius:50%;background:var(--ink);align-self:center;justify-self:center;visibility:hidden}
+.pip.on{visibility:visible}
+.die.rolling{animation:shake .12s linear infinite}
+@keyframes shake{0%{transform:rotate(0) translateY(0)}25%{transform:rotate(14deg) translateY(-.3em)}50%{transform:rotate(-10deg) translateY(.1em)}75%{transform:rotate(8deg) translateY(-.2em)}100%{transform:rotate(0)}}
+.dice-sum{font-family:var(--font-display);font-size:1.5em;font-weight:700;min-width:3.5em;text-align:center}
+
+/* Brikker */
+#tokens{position:absolute;inset:0;pointer-events:none}
+.token{position:absolute;width:2.5em;height:2.5em;transform:translate(-50%,-50%);transition:left .17s ease,top .17s ease;z-index:5}
+.token .tk{
+  width:100%;height:100%;border-radius:50%;border:.18em solid var(--ink);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);font-weight:700;font-size:1.25em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.6);
+  box-shadow:0 .2em .35em rgba(0,0,0,.45)
+}
+.token .tk{font-size:1em}
+.token .tk span{font-size:1.3em;line-height:1}
+.token.active{z-index:6}
+.token.active .tk{animation:glow 1.4s ease-in-out infinite}
+.token.hop .tk{animation:hop .17s ease-out}
+@keyframes hop{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-.6em) scale(1.12)}100%{transform:translateY(0) scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 .15em var(--gold),0 .2em .35em rgba(0,0,0,.45)}50%{box-shadow:0 0 0 .45em rgba(212,167,44,.35),0 .2em .35em rgba(0,0,0,.45)}}
+
+/* ---------- Sidebjælke ---------- */
+.panel{background:var(--sea-2);border:1px solid var(--sea-3);border-radius:var(--radius);padding:12px 14px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.brand h1{margin:0;font-family:var(--font-display);font-size:1.55rem;letter-spacing:.12em}
+.brand small{color:var(--muted);font-size:.8rem}
+.link-btn{background:none;border:1px solid var(--sea-3);color:var(--foam);border-radius:4px;padding:3px 9px;font-size:.8rem}
+.link-btn:hover{background:var(--sea-3)}
+#turnPanel{border-left:6px solid var(--gold)}
+.turn-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.turn-name{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:1.45rem;font-weight:700;margin:2px 0 8px}
+.mini-token{width:1.6em;height:1.6em;border-radius:50%;border:2px solid var(--ink);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;font-size:.85rem;flex:0 0 auto;text-shadow:0 1px 1px rgba(0,0,0,.6)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:rgba(0,0,0,.18);border-radius:4px;padding:6px 8px}
+.stat b{display:block;font-size:1.25rem;font-family:var(--font-display)}
+.stat span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.status-line{margin-top:8px;font-size:.85rem;color:var(--gold);min-height:1.2em}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border:2px solid var(--ink);border-radius:5px;padding:10px 12px;font-weight:700;font-size:.98rem;background:var(--marble);color:var(--ink);box-shadow:0 3px 0 var(--ink);transition:transform .05s}
+.btn:hover:not(:disabled){filter:brightness(1.07)}
+.btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn.primary{background:var(--clay);color:#fff8ef}
+.btn.gold{background:var(--gold);color:var(--ink)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.wide{grid-column:1/-1}
+.btn.small{padding:5px 9px;font-size:.82rem;box-shadow:0 2px 0 var(--ink)}
+.section-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:0 0 6px}
+.players-list{display:flex;flex-direction:column;gap:6px}
+.p-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:5px 8px;border-radius:4px;background:rgba(0,0,0,.15);border:1px solid transparent}
+.p-row.current{border-color:var(--gold);background:rgba(212,167,44,.12)}
+.p-row.out{opacity:.45;text-decoration:line-through}
+.p-row .p-meta{font-size:.75rem;color:var(--muted)}
+.p-row .p-money{font-weight:700;font-family:var(--font-display);font-size:1.05rem}
+.prop-chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:3px;padding:2px 7px 2px 3px;font-size:.78rem;background:var(--marble);color:var(--ink);border:1px solid var(--ink);cursor:pointer}
+.chip i{width:.8em;height:1.1em;display:inline-block;border-radius:2px}
+.chip.mort{opacity:.5;text-decoration:line-through}
+.empty{color:var(--muted);font-size:.85rem;font-style:italic}
+#logPanel{flex:1 1 180px;min-height:160px;display:flex;flex-direction:column}
+#log{flex:1;overflow:auto;font-size:.84rem;display:flex;flex-direction:column;gap:3px;padding-right:4px}
+.log-entry{padding:3px 6px;border-left:3px solid var(--sea-3);background:rgba(0,0,0,.12)}
+.log-entry.sys{color:var(--muted);font-style:italic}
+
+/* ---------- Modaler ---------- */
+#modalOverlay{position:fixed;inset:0;background:rgba(6,18,28,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal{
+  width:min(540px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--marble);color:var(--ink);
+  border:3px solid var(--ink);border-radius:8px;box-shadow:0 25px 60px rgba(0,0,0,.55);animation:pop .22s ease-out
+}
+@keyframes pop{from{transform:scale(.92) translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{padding:14px 18px;background:var(--ink);color:var(--marble);display:flex;align-items:center;gap:12px}
+.modal-head h2{margin:0;font-family:var(--font-display);font-size:1.35rem;line-height:1.15;text-wrap:balance}
+.modal-head .kicker{display:block;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;opacity:.8;font-family:var(--font-body);font-weight:600}
+.modal-head svg{width:40px;height:40px;flex:0 0 auto}
+.modal-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.modal-body p{margin:0}
+.modal-foot{padding:12px 18px 16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;border-top:1px solid var(--marble-2)}
+.fact{background:#fff;border:1px solid var(--marble-2);border-left:4px solid var(--clay);padding:10px 12px;font-family:var(--font-display);font-size:1rem;line-height:1.5}
+.fact .lbl{display:block;font-family:var(--font-body);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--clay-2);font-weight:700;margin-bottom:3px}
+.effect{font-weight:700;font-size:1.05rem;padding:8px 12px;border-radius:4px;background:var(--marble-2)}
+.effect.plus{background:#dcefe2;color:#1d5a32}
+.effect.minus{background:#f6dcd6;color:#7a1f14}
+.rent-table{width:100%;border-collapse:collapse;font-size:.92rem}
+.rent-table td{padding:4px 6px;border-bottom:1px dotted #b9b0a0}
+.rent-table td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.rent-table tr.hl td{background:#f7e7b8}
+.deed-foot{font-size:.85rem;color:#4a4036;display:flex;flex-wrap:wrap;gap:4px 14px}
+.owner-line{font-size:.9rem;display:flex;align-items:center;gap:8px}
+.card-oracle .modal-head{background:var(--ink);color:var(--gold)}
+.card-gunst .modal-head{background:#e9dcb4;color:var(--ink);border-bottom:2px solid var(--ink)}
+.card-text{font-family:var(--font-display);font-size:1.12rem;line-height:1.5}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quiz-opts .btn{text-align:left;font-weight:600}
+.warn{background:#f6dcd6;border:1px solid var(--bad);color:#7a1f14;padding:10px 12px;border-radius:4px}
+
+/* Ejendomsadministration */
+.mg-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700}
+.mg-list{display:flex;flex-direction:column;gap:6px}
+.mg-row{display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:10px;align-items:center;padding:6px 8px;background:#fff;border:1px solid var(--marble-2);border-radius:4px}
+.mg-row .bar{width:8px;height:100%;min-height:34px;border-radius:2px}
+.mg-row .nm{font-weight:700;font-family:var(--font-display)}
+.mg-row .info{font-size:.78rem;color:#4a4036}
+.mg-row .acts{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end}
+
+/* ---------- Opsætning ---------- */
+#setup{position:fixed;inset:0;z-index:40;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;background:radial-gradient(ellipse at 50% 0%,#1d5376 0%,var(--sea) 65%)}
+.setup-card{width:min(720px,100%);background:var(--marble);color:var(--ink);border:3px solid var(--ink);border-radius:10px;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.setup-hero{background:var(--clay);padding:26px 22px 20px;text-align:center;position:relative;border-bottom:3px solid var(--ink)}
+.setup-hero .meander{left:12px;right:12px;height:16px}
+.setup-hero .meander.top{top:10px}
+.setup-hero .meander.bot{bottom:10px}
+.setup-hero h1{margin:14px 0 0;font-family:var(--font-display);font-size:clamp(2.6rem,9vw,4.2rem);letter-spacing:.2em;line-height:1;margin-right:-.2em}
+.setup-hero p{margin:6px 0 16px;font-family:var(--font-display);font-style:italic;font-size:1.05rem}
+.setup-body{padding:20px 22px;display:flex;flex-direction:column;gap:16px}
+.count-pick{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.count-pick .btn{min-width:110px}
+.count-pick .btn.sel{background:var(--ink);color:var(--gold)}
+.setup-rows{display:flex;flex-direction:column;gap:10px}
+.setup-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:10px;border:1px solid var(--marble-2);border-radius:6px;background:#fff}
+.setup-row label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#6b5f52;font-weight:700}
+.setup-row input{width:100%;font:inherit;font-size:1.05rem;padding:7px 9px;border:2px solid var(--ink);border-radius:4px;background:var(--marble);color:var(--ink)}
+.tok-pick{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tok-opt{border:2px solid transparent;border-radius:20px;padding:2px 9px 2px 2px;display:flex;align-items:center;gap:6px;background:var(--marble);font-size:.82rem;color:var(--ink)}
+.tok-opt.sel{border-color:var(--ink);background:#f7e7b8;font-weight:700}
+.big-token{width:52px;height:52px;border-radius:50%;border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--font-display);font-weight:700;font-size:1.7rem;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.rules{font-size:.92rem;background:#fff;border:1px solid var(--marble-2);border-radius:6px;padding:4px 14px}
+.rules summary{cursor:pointer;font-weight:700;padding:8px 0}
+.rules ul{margin:0 0 10px;padding-left:20px}
+.rules li{margin:3px 0}
+
+/* ---------- Smalle skærme ---------- */
+@media (max-width:1000px){
+  #app{grid-template-columns:minmax(0,1fr);height:auto;padding:16px}
+  html,body{height:auto}
+  #sidebar{overflow:visible}
+  #logPanel{max-height:260px}
+}
+@media (max-width:560px){
+  .actions{grid-template-columns:1fr}
+  .quiz-opts{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .modal-head h2{font-size:1.15rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .token{transition:none}
+  .token.active .tk,.token.hop .tk,.die.rolling,.modal{animation:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <main id="boardWrap" aria-label="Spillebræt">
+    <div id="board">
+      <div id="center">
+        <div class="meander top"></div>
+        <div class="meander bot"></div>
+        <div style="text-align:center">
+          <div class="title-gr">ΠΟΛΙΣ</div>
+          <div class="title-sub">Polis</div>
+        </div>
+        <div class="tagline">Handel, helligdomme og heltegerninger i det antikke Grækenland</div>
+        <div class="decks">
+          <div class="deck oracle" id="deckOracle"></div>
+          <div class="deck gunst" id="deckGunst"></div>
+        </div>
+        <div class="dice-area" aria-live="polite">
+          <div class="die" id="die1"></div>
+          <div class="die" id="die2"></div>
+          <div class="dice-sum num" id="diceSum">&nbsp;</div>
+        </div>
+      </div>
+      <div id="tokens"></div>
+    </div>
+  </main>
+
+  <aside id="sidebar">
+    <div class="panel brand">
+      <h1>ΠΟΛΙΣ</h1>
+      <small id="roundInfo">Runde 1</small>
+      <span style="display:flex;gap:6px">
+        <button class="link-btn" id="rulesBtn" type="button">Regler</button>
+        <button class="link-btn" id="newGameBtn" type="button">Nyt spil</button>
+      </span>
+    </div>
+
+    <section class="panel" id="turnPanel" aria-live="polite">
+      <div class="turn-label">Det er din tur</div>
+      <div class="turn-name" id="turnName"></div>
+      <div class="stats">
+        <div class="stat"><b class="num" id="statMoney">0 ₯</b><span>Drachmer</span></div>
+        <div class="stat"><b class="num" id="statProps">0</b><span>Ejendomme</span></div>
+        <div class="stat"><b class="num" id="statWorth">0 ₯</b><span>Formue</span></div>
+      </div>
+      <div class="status-line" id="statusLine"></div>
+    </section>
+
+    <section class="panel">
+      <div class="actions">
+        <button class="btn primary wide" id="rollBtn" type="button">Kast terningerne</button>
+        <button class="btn" id="manageBtn" type="button">Ejendomme og byggeri</button>
+        <button class="btn gold" id="endBtn" type="button">Afslut tur</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3 class="section-title">Dine ejendomme</h3>
+      <div class="prop-chips" id="propChips"></div>
+    </section>
+
+    <section class="panel">
+      <h3 class="section-title">Spillerne</h3>
+      <div class="players-list" id="playersList"></div>
+    </section>
+
+    <section class="panel" id="logPanel">
+      <h3 class="section-title">Krønike</h3>
+      <div id="log" aria-live="polite"></div>
+    </section>
+  </aside>
+</div>
+
+<div id="setup"></div>
+<div id="modalOverlay" hidden></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   SPILDATA
+   ===================================================================== */
+const START_MONEY = 1500;
+const PASS_START = 200;
+const EXILE_FEE = 50;
+const EXILE_POS = 8;
+const BOARD_SIZE = 32;
+const PORT_RENT = [25, 50, 100, 200];
+const QUIZ_REWARD = 100;
+
+const GROUPS = {
+  bronze: { name: "Bronzealderen",        color: "#8a5a2b", build: 50 },
+  philo:  { name: "Filosofiens skoler",   color: "#6fc1e0", build: 50 },
+  sacred: { name: "Helligdomme",          color: "#9b3b86", build: 100 },
+  battle: { name: "Slagmarker",           color: "#e07b2a", build: 100 },
+  city:   { name: "Bystater",             color: "#c0392b", build: 150 },
+  games:  { name: "De Panhellenske Lege", color: "#e6bc2f", build: 150 },
+  acro:   { name: "Akropolis",            color: "#1f4e8c", build: 200 },
+  port:   { name: "Havne og handelsveje", color: "#3b3129", build: 0 }
+};
+
+const TOKENS = [
+  { id: "sparta",  label: "Sparta-rød",   color: "#c0392b", letter: "Λ", city: "Sparta",  defName: "Leonidas" },
+  { id: "athen",   label: "Athen-blå",    color: "#2e6fd1", letter: "Α", city: "Athen",   defName: "Perikles" },
+  { id: "korinth", label: "Korinth-grøn", color: "#2e9e5b", letter: "Ϙ", city: "Korinth", defName: "Periandros" },
+  { id: "theben",  label: "Theben-guld",  color: "#d4a017", letter: "Θ", city: "Theben",  defName: "Epaminondas" }
+];
+
+/* type: start | prop | port | oracle | gunst | tax | exile | truce | ostra
+   rent: [grundleje, 1 alter, 2 altre, 3 altre, 4 altre, tempel] */
+const SPACES = [
+  { type: "start", name: "Start ved Agoraen",
+    fact: "Agoraen var Athens torv og hjerte, hvor borgerne handlede, diskuterede politik og lyttede til filosoffer som Sokrates. Her stod også rådhuset Bouleuterion og søjlehallerne, stoaerne, der gav skygge til handel og samtale." },
+  { type: "prop", group: "bronze", name: "Knossos", price: 60, rent: [2, 10, 30, 90, 160, 250],
+    fact: "Paladset i Knossos på Kreta var centrum for den minoiske civilisation, og de første paladsbygninger blev opført omkring 1900 f.Kr. Arkæologen Arthur Evans udgravede stedet fra år 1900, og de mange gange kan have inspireret myten om Minotauros' labyrint." },
+  { type: "oracle", name: "Oraklets Spådomme" },
+  { type: "prop", group: "bronze", name: "Mykene", price: 60, rent: [4, 20, 60, 180, 320, 450],
+    fact: "Mykene var den mægtigste by i Grækenlands sene bronzealder og har lagt navn til hele den mykenske kultur. Byen er berømt for Løveporten og for Heinrich Schliemanns udgravning i 1876, hvor han fandt den guldmaske, han kaldte Agamemnons." },
+  { type: "tax", name: "Krigsskat (Eisphora)", amount: 100,
+    fact: "I Athen kunne folkeforsamlingen opkræve eisphora, en ekstraordinær formueskat på de rigeste borgere i krigstid. Thukydid beretter, at skatten blev opkrævet under Den Peloponnesiske Krig i 428 f.Kr." },
+  { type: "port", group: "port", name: "Piræus", price: 200,
+    fact: "Themistokles lod fra 493 f.Kr. Piræus befæste og udbygge til Athens krigs- og handelshavn. Fra midten af 400-tallet f.Kr. forbandt De Lange Mure havnen med Athen, så byen kunne forsynes ad søvejen under en belejring." },
+  { type: "prop", group: "philo", name: "Akademiet", price: 100, rent: [6, 30, 90, 270, 400, 550],
+    fact: "Platon grundlagde omkring 387 f.Kr. sin filosofiskole i en lund uden for Athen, som var helliget helten Akademos. Skolen virkede i århundreder, og ordet akademi stammer direkte herfra." },
+  { type: "prop", group: "philo", name: "Lykeion", price: 120, rent: [8, 40, 100, 300, 450, 600],
+    fact: "Aristoteles åbnede i 335 f.Kr. sin skole i Lykeion, et gymnasion ved Apollon Lykeios' helligdom i Athen. Hans elever blev kaldt peripatetikere efter de overdækkede gange, peripatoi, hvor de ifølge traditionen diskuterede, mens de gik." },
+  { type: "exile", name: "Bortvist i Eksil",
+    fact: "Landsforvisning var en almindelig straf i de græske bystater, og mange berømte mænd endte deres dage i eksil. Historikeren Thukydid blev selv forvist fra Athen i 20 år efter et militært nederlag ved Amfipolis i 424 f.Kr." },
+  { type: "prop", group: "sacred", name: "Dodona", price: 140, rent: [10, 50, 150, 450, 625, 750],
+    fact: "Dodona i Epirus regnes for Grækenlands ældste orakel og nævnes allerede hos Homer. Præsterne tolkede Zeus' vilje ud fra raslen i bladene på et helligt egetræ." },
+  { type: "gunst", name: "Gudernes Gunst" },
+  { type: "prop", group: "sacred", name: "Epidauros", price: 140, rent: [10, 50, 150, 450, 625, 750],
+    fact: "Epidauros var helligdom for lægeguden Asklepios, hvor syge sov i templets hal i håb om at blive helbredt gennem drømme. Stedets teater fra slutningen af 300-tallet f.Kr. har så god akustik, at en hvisken fra scenen kan høres på de øverste rækker." },
+  { type: "prop", group: "sacred", name: "Eleusis", price: 160, rent: [12, 60, 180, 500, 700, 900],
+    fact: "I Eleusis fejrede man De Eleusinske Mysterier til ære for gudinderne Demeter og Persefone. De indviede måtte under trussel om dødsstraf aldrig afsløre ritualerne, og derfor kender vi stadig ikke de præcise hemmeligheder." },
+  { type: "port", group: "port", name: "Diolkos", price: 200,
+    fact: "Diolkos var en brolagt vej over landtangen ved Korinth, hvor skibe og gods blev trukket på vogne mellem Den Korinthiske og Den Saroniske Bugt. Vejen blev anlagt omkring 600 f.Kr. og sparede søfolk for den farlige sejlads rundt om Peloponnes." },
+  { type: "prop", group: "battle", name: "Marathon", price: 180, rent: [14, 70, 200, 550, 750, 950],
+    fact: "Ved Marathon besejrede omkring 10.000 athenere og 1.000 plataiere en langt større persisk hær i 490 f.Kr. Legenden om budbringeren, der løb til Athen med sejrsbudskabet, inspirerede maratonløbet ved De Olympiske Lege i 1896." },
+  { type: "prop", group: "battle", name: "Thermopylerne", price: 180, rent: [14, 70, 200, 550, 750, 950],
+    fact: "I 480 f.Kr. forsvarede kong Leonidas med 300 spartanere og flere tusinde andre grækere det smalle pas ved Thermopylerne mod Xerxes' hær i tre dage. Grækerne blev omgået ad en bjergsti, men nederlaget blev et udødeligt symbol på mod og offervilje." },
+  { type: "truce", name: "Den Olympiske Våbenhvile",
+    fact: "Under De Olympiske Lege blev der udråbt ekecheiria, en hellig våbenhvile, så atleter og tilskuere kunne rejse sikkert til og fra Olympia. Her hviler du og bliver stillet en visdomsprøve: Svar rigtigt, og du modtager 100 ₯." },
+  { type: "prop", group: "battle", name: "Salamis", price: 200, rent: [16, 80, 220, 600, 800, 1000],
+    fact: "I søslaget ved Salamis i 480 f.Kr. lokkede Themistokles den persiske flåde ind i det snævre sund, hvor dens overtal ikke kunne udnyttes mod de græske triremer. Sejren reddede Grækenland fra persisk erobring og lagde grunden til Athens storhedstid." },
+  { type: "oracle", name: "Oraklets Spådomme" },
+  { type: "prop", group: "city", name: "Theben", price: 220, rent: [18, 90, 250, 700, 875, 1050],
+    fact: "Theben var Boiotiens vigtigste by og blev ifølge myten grundlagt af Kadmos, som også skulle have bragt alfabetet til Grækenland. Under Epaminondas knuste thebanerne Spartas hær ved Leuktra i 371 f.Kr. og blev en kort tid Grækenlands førende magt." },
+  { type: "prop", group: "city", name: "Korinth", price: 220, rent: [18, 90, 250, 700, 875, 1050],
+    fact: "Korinth kontrollerede landtangen mellem Peloponnes og det græske fastland og blev rig på handelen mellem to have. Byen var kendt for sin keramik og har givet navn til den korinthiske søjleorden med akantusblade." },
+  { type: "port", group: "port", name: "Rhodos' Havn", price: 200,
+    fact: "På Rhodos stod Kolossen, en omkring 33 meter høj bronzestatue af solguden Helios, som stod færdig omkring 280 f.Kr. Statuen var et af oldtidens syv vidundere, men styrtede sammen ved et jordskælv i 226 f.Kr., blot 54 år senere." },
+  { type: "prop", group: "city", name: "Sparta", price: 240, rent: [20, 100, 300, 750, 925, 1100],
+    fact: "Sparta var en militærstat, hvor drengene fra syvårsalderen blev opdraget i den hårde statsopdragelse agoge. Byen havde to konger på samme tid, og spartanerne var berømte for deres korte og præcise tale, som vi stadig kalder lakonisk." },
+  { type: "prop", group: "games", name: "Nemea", price: 260, rent: [22, 110, 330, 800, 975, 1150],
+    fact: "I Nemea afholdtes hvert andet år De Nemeiske Lege til ære for Zeus, et af de fire panhellenske stævner. Ifølge myten dræbte Herakles her den nemeiske løve som det første af sine tolv arbejder." },
+  { type: "ostra", name: "Ostrakisme",
+    fact: "Ved ostrakisme kunne athenerne én gang om året stemme en borger i eksil i ti år ved at ridse hans navn på potteskår, ostraka. Selv sejrherren fra Salamis, Themistokles, blev ostrakiseret omkring 471 f.Kr." },
+  { type: "prop", group: "games", name: "Delfi", price: 260, rent: [22, 110, 330, 800, 975, 1150],
+    fact: "Delfi blev regnet for verdens midtpunkt, markeret med stenen omphalos, og her gav præstinden Pythia orakelsvar på Apollons vegne. Hvert fjerde år holdtes også De Pythiske Lege, og bystater fra hele den græske verden søgte råd her, før de gik i krig eller grundlagde kolonier." },
+  { type: "prop", group: "games", name: "Olympia", price: 280, rent: [24, 120, 360, 850, 1025, 1200],
+    fact: "De Olympiske Lege blev ifølge traditionen afholdt første gang i 776 f.Kr. i Zeus' helligdom i Olympia. Sejrherrerne modtog kun en krans af olivengrene, men blev hyldet som helte i deres hjemby." },
+  { type: "gunst", name: "Gudernes Gunst" },
+  { type: "port", group: "port", name: "Delos' Havn", price: 200,
+    fact: "Den lille ø Delos var helliget Apollon og Artemis og husede fra 478 f.Kr. skatkammeret for Det Deliske Forbund. Efter at romerne gjorde øen til frihavn i 166 f.Kr., blev den et af Middelhavets største handelscentre." },
+  { type: "tax", name: "Trierarki", amount: 150,
+    fact: "Som trierark skulle en velhavende athener i et år udruste og ofte selv lede et krigsskib, en trireme med tre rækker årer. Denne liturgi var en æresopgave, men den kunne koste en mindre formue." },
+  { type: "prop", group: "acro", name: "Erechtheion", price: 350, rent: [35, 175, 500, 1100, 1300, 1500],
+    fact: "Erechtheion blev bygget på Akropolis mellem 421 og 406 f.Kr. og er berømt for karyatidehallen, hvor seks kvindeskulpturer bærer taget i stedet for søjler. Ifølge myten ligger templet, hvor Athena og Poseidon kæmpede om at blive byens skytsguddom." },
+  { type: "prop", group: "acro", name: "Parthenon", price: 400, rent: [50, 200, 600, 1400, 1700, 2000],
+    fact: "Parthenon blev opført mellem 447 og 432 f.Kr. under Perikles som tempel for byens skytsgudinde Athena Parthenos. Arkitekterne Iktinos og Kallikrates tegnede templet, mens billedhuggeren Feidias ledede den berømte skulpturudsmykning." }
+];
+
+/* Kort. Effekttyper: money, moveTo, moveBy, exile, amnesty, payEach, collectEach, repairs, nearestPort */
+const ORACLE_CARDS = [
+  { text: "Som Alkibiades, der i 416 f.Kr. stillede med syv stridsvogne, sponsorerede du De Olympiske Lege. Pragten koster dyrt.",
+    effect: { type: "money", amount: -100 }, label: "Betal 100 ₯" },
+  { text: "Oraklet udtaler: \"Stol på træmurene!\" Ligesom Themistokles i 480 f.Kr. tolker du det som flåden og sætter kurs mod sundet.",
+    effect: { type: "moveTo", to: 17 }, label: "Ryk frem til Salamis" },
+  { text: "Kong Kroisos af Lydien fik at vide, at han ville ødelægge et stort rige, hvis han angreb Persien. Riget, der faldt, var hans eget.",
+    effect: { type: "money", amount: -150 }, label: "Betal 150 ₯ for din overmod" },
+  { text: "Athenerne har ridset dit navn på potteskår. Du er ostrakiseret og må forlade byen med det samme.",
+    effect: { type: "exile" }, label: "Gå direkte i eksil uden at passere Agoraen" },
+  { text: "Sokrates blev i 399 f.Kr. dømt for at fordærve ungdommen. Du får en bøde for at stille alt for mange spørgsmål på Agoraen.",
+    effect: { type: "money", amount: -50 }, label: "Betal 50 ₯" },
+  { text: "Pesten rammer Athen i 430 f.Kr. under Den Peloponnesiske Krig. Du flygter ud af byen.",
+    effect: { type: "moveBy", steps: -3 }, label: "Gå 3 felter tilbage" },
+  { text: "Et voldsomt jordskælv rammer Sparta som i 464 f.Kr. Dine helligdomme skal genopbygges.",
+    effect: { type: "repairs", altar: 25, temple: 100 }, label: "Betal 25 ₯ pr. alter og 100 ₯ pr. tempel" },
+  { text: "Pythia kalder dig til Apollons helligdom for at modtage et personligt orakelsvar.",
+    effect: { type: "moveTo", to: 25 }, label: "Ryk frem til Delfi" },
+  { text: "Efter De Tredive Tyranners fald i 403 f.Kr. vedtog Athen en almindelig amnesti. Også du bliver tilgivet.",
+    effect: { type: "amnesty" }, label: "Amnestikort: Behold kortet og forlad eksil gratis" },
+  { text: "Du er udpeget som korleder, choregos, ved Dionysosfesten og skal betale for teaterkoret.",
+    effect: { type: "payEach", amount: 50 }, label: "Betal 50 ₯ til hver medspiller" },
+  { text: "I 483 f.Kr. fandt athenerne en rig sølvåre i Laurions miner, og Themistokles fik sølvet brugt til 200 nye triremer. Også du gør et heldigt fund.",
+    effect: { type: "money", amount: 150 }, label: "Modtag 150 ₯" },
+  { text: "Pythia ser en lang rejse i din fremtid, der ender, hvor den begyndte.",
+    effect: { type: "moveTo", to: 0 }, label: "Ryk frem til Start ved Agoraen og modtag 200 ₯" },
+  { text: "Oraklet råder dig til at drive handel over havet, som da grækerne grundlagde kolonier fra Sortehavet til Spanien.",
+    effect: { type: "nearestPort" }, label: "Ryk frem til nærmeste havn" },
+  { text: "Ifølge en gammel fortælling læste Herodot, historieskrivningens fader, sit værk højt ved De Olympiske Lege. Du betaler for en plads på forreste række.",
+    effect: { type: "money", amount: -25 }, label: "Betal 25 ₯" }
+];
+
+const GUNST_CARDS = [
+  { text: "Athena, visdommens gudinde, skænker dig sin visdom og et godt øje for forretninger.",
+    effect: { type: "money", amount: 150 }, label: "Modtag 150 ₯" },
+  { text: "Hermes, handelens og de rejsendes gud, velsigner dine handler på Agoraen.",
+    effect: { type: "money", amount: 100 }, label: "Modtag 100 ₯" },
+  { text: "Du søger helbredelse hos Asklepios i Epidauros. Præsterne forventer en offergave.",
+    effect: { type: "money", amount: -50 }, label: "Betal 50 ₯" },
+  { text: "Du vinder dramakonkurrencen ved Dionysiafesten, ligesom Sofokles gjorde over 20 gange. Publikum hylder dig.",
+    effect: { type: "collectEach", amount: 25 }, label: "Modtag 25 ₯ fra hver medspiller" },
+  { text: "Poseidon sender medvind til din handelsflåde, og skibene når sikkert i havn med deres last.",
+    effect: { type: "money", amount: 100 }, label: "Modtag 100 ₯" },
+  { text: "Zeus er vred, og et lyn rammer dit kornlager.",
+    effect: { type: "money", amount: -100 }, label: "Betal 100 ₯" },
+  { text: "Demeter, kornets gudinde, skænker dine marker en rig høst.",
+    effect: { type: "money", amount: 75 }, label: "Modtag 75 ₯" },
+  { text: "Apollon forbarmer sig over dig og taler din sag for folkeforsamlingen.",
+    effect: { type: "amnesty" }, label: "Amnestikort: Behold kortet og forlad eksil gratis" },
+  { text: "Du vinder stadionløbet ved De Olympiske Lege ligesom Koroibos fra Elis, den første kendte sejrherre i 776 f.Kr.",
+    effect: { type: "money", amount: 100 }, label: "Modtag 100 ₯ som æresgave fra din hjemby" },
+  { text: "Hera er jaloux på din lykke og sørger for, at du bliver anklaget for gudsbespottelse.",
+    effect: { type: "exile" }, label: "Gå direkte i eksil uden at passere Agoraen" },
+  { text: "Kong Augias nægtede at betale Herakles for at rense sine stalde, men din arbejdsgiver er mere ærlig.",
+    effect: { type: "money", amount: 50 }, label: "Modtag 50 ₯" },
+  { text: "Nike, sejrens bevingede gudinde, fører dig frem mod Zeus' helligdom.",
+    effect: { type: "moveTo", to: 26 }, label: "Ryk frem til Olympia" },
+  { text: "Hefaistos, smedenes gud, smeder nye bronzebeslag til dine helligdomme. Vedligeholdelse koster.",
+    effect: { type: "repairs", altar: 40, temple: 115 }, label: "Betal 40 ₯ pr. alter og 115 ₯ pr. tempel" },
+  { text: "Persefone vender tilbage fra Underverdenen, og foråret bringer ny begyndelse.",
+    effect: { type: "moveTo", to: 0 }, label: "Ryk frem til Start ved Agoraen og modtag 200 ₯" }
+];
+
+const TRIVIA = [
+  { q: "Hvilket år blev de første Olympiske Lege afholdt ifølge traditionen?", a: "776 f.Kr.", wrong: ["490 f.Kr.", "1200 f.Kr.", "332 f.Kr."],
+    why: "Traditionen dateres til listen over sejrherrer, hvor Koroibos fra Elis vandt stadionløbet i 776 f.Kr." },
+  { q: "Hvem var Alexander den Stores lærer?", a: "Aristoteles", wrong: ["Sokrates", "Platon", "Pythagoras"],
+    why: "Kong Filip 2. af Makedonien hentede Aristoteles til at undervise den unge Alexander fra omkring 343 f.Kr." },
+  { q: "Hvad kaldte athenerne de potteskår, de brugte til at stemme en borger i eksil?", a: "Ostraka", wrong: ["Drachmer", "Amforaer", "Kylikes"],
+    why: "Ordet ostrakisme kommer af ostrakon, et skår af brændt ler, hvorpå man ridsede navnet på den, man ville forvise." },
+  { q: "Hvilken persisk storkonge invaderede Grækenland i 480 f.Kr.?", a: "Xerxes", wrong: ["Dareios", "Kyros", "Kambyses"],
+    why: "Xerxes førte en enorm hær over Hellespont, men blev standset ved Salamis i 480 f.Kr. og Plataiai i 479 f.Kr." },
+  { q: "Hvad hed præstinden, der gav orakelsvar i Delfi?", a: "Pythia", wrong: ["Kassandra", "Sibylla", "Medea"],
+    why: "Pythia sad ifølge kilderne på en trefod i Apollons tempel og udtalte gudens svar." },
+  { q: "Hvem kaldes historieskrivningens fader?", a: "Herodot", wrong: ["Thukydid", "Homer", "Xenofon"],
+    why: "Den romerske taler Cicero gav Herodot tilnavnet, fordi hans værk om Perserkrigene er det første store historieværk." },
+  { q: "Hvilken af de klassiske græske søjleordener er den enkleste?", a: "Den doriske", wrong: ["Den ioniske", "Den korinthiske", "Den toscanske"],
+    why: "Den doriske søjle har intet basisled og et enkelt kapitæl; Parthenon er bygget i dorisk orden." },
+  { q: "Hvad var en trireme?", a: "Et krigsskib med tre rækker årer", wrong: ["Et tempel med tre søjlerækker", "En vogn trukket af tre heste", "En mønt til tre drachmer"],
+    why: "Triremen var omkring 37 meter lang og blev roet af cirka 170 roere fordelt på tre niveauer." },
+  { q: "Hvem var Athens ledende statsmand, da Parthenon blev bygget?", a: "Perikles", wrong: ["Solon", "Themistokles", "Drakon"],
+    why: "Perikles satte et stort byggeprogram i gang på Akropolis fra 447 f.Kr., delvist betalt med midler fra Det Deliske Forbund." },
+  { q: "Hvad betyder det græske ord demokrati?", a: "Folkestyre", wrong: ["Fåmandsvælde", "Kongedømme", "De bedstes styre"],
+    why: "Demos betyder folk og kratos betyder magt eller styre." },
+  { q: "Hvem gennemførte de demokratiske reformer i Athen i 508/507 f.Kr.?", a: "Kleisthenes", wrong: ["Peisistratos", "Leonidas", "Lykurgos"],
+    why: "Kleisthenes inddelte borgerne i ti nye fylder og regnes derfor ofte for det athenske demokratis fader." },
+  { q: "Hvilken by i Egypten blev grundlagt af Alexander den Store?", a: "Alexandria", wrong: ["Memfis", "Theben", "Kairo"],
+    why: "Alexandria blev grundlagt i 331 f.Kr. og blev kendt for sit store bibliotek og fyrtårnet på Faros." },
+  { q: "Hvem skrev ifølge traditionen Iliaden og Odysseen?", a: "Homer", wrong: ["Hesiod", "Sapfo", "Aischylos"],
+    why: "De to epos blev formentlig nedskrevet i 700-tallet f.Kr. på baggrund af en lang mundtlig tradition." },
+  { q: "Hvilke to bystater var hovedmodstanderne i Den Peloponnesiske Krig?", a: "Athen og Sparta", wrong: ["Korinth og Theben", "Argos og Megara", "Athen og Persien"],
+    why: "Krigen varede fra 431 til 404 f.Kr. og endte med Athens nederlag." },
+  { q: "Hvilken matematiker er kendt for læresætningen om den retvinklede trekant?", a: "Pythagoras", wrong: ["Euklid", "Archimedes", "Thales"],
+    why: "Sætningen bærer Pythagoras' navn, selv om babyloniske matematikere kendte sammenhængen før ham." }
+];
+
+/* =====================================================================
+   IKONER (SVG, farve via currentColor)
+   ===================================================================== */
+const ICON = {
+  agora: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 12 20 3l16 9z" fill="currentColor"/><rect x="5" y="13" width="30" height="3" fill="currentColor"/><g fill="currentColor"><rect x="8" y="18" width="4" height="13"/><rect x="15" y="18" width="4" height="13"/><rect x="22" y="18" width="4" height="13"/><rect x="29" y="18" width="4" height="13"/></g><rect x="5" y="32" width="30" height="2.5" fill="currentColor"/><rect x="3" y="35.5" width="34" height="2.5" fill="currentColor"/></svg>',
+  oracle: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 15c-4-3 3-5-1-9m6 8c-3-2 2-4-1-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 16h24c0 6-5 9-12 9S8 22 8 16z" fill="currentColor"/><path d="M12 23 7 37M20 25v12M28 23l5 14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M10 31h20" stroke="currentColor" stroke-width="1.5"/></svg>',
+  bolt: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M23 2 8 22h10l-4 16 18-23H21l5-13z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>',
+  coin: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="#d4a72c" stroke="currentColor" stroke-width="2.5"/><circle cx="20" cy="20" r="11.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/><path d="M15 12v16M15 20h7a4 4 0 0 0 0-8h-7M12 23h12M12 26.5h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  ship: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4v20" stroke="currentColor" stroke-width="2"/><path d="M10 7c6 3 14 3 20 0v12c-6 3-14 3-20 0z" fill="#c15a2a" stroke="currentColor" stroke-width="1.6"/><path d="M2 24h33l3-3-2 7c-1 2-3 3-5 3H9c-3 0-5-2-7-7z" fill="currentColor"/><circle cx="31" cy="26" r="1.2" fill="#f5f1e8"/><path d="M8 30l-3 6M13 31l-3 6M18 31l-3 6M23 31l-3 6M28 31l-3 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  wreath: (() => {
+    let s = '<svg viewBox="0 0 40 40" aria-hidden="true"><g fill="#3f7a35" stroke="#1f1a16" stroke-width=".6">';
+    for (let k = 0; k < 7; k++) {
+      const a = (200 - k * 22) * Math.PI / 180;
+      const x = 20 + 13 * Math.cos(a), y = 21 - 13 * Math.sin(a);
+      const deg = (200 - k * 22);
+      s += `<ellipse cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="4.2" ry="1.9" transform="rotate(${(-deg + 70).toFixed(0)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+      const x2 = 40 - x;
+      s += `<ellipse cx="${x2.toFixed(1)}" cy="${y.toFixed(1)}" rx="4.2" ry="1.9" transform="rotate(${(deg - 70).toFixed(0)} ${x2.toFixed(1)} ${y.toFixed(1)})"/>`;
+    }
+    return s + '</g><path d="M17 36q3-3 6 0" fill="none" stroke="#1f1a16" stroke-width="1.5"/></svg>';
+  })(),
+  shard: '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 12 14 5l15 2 7 9-3 14-12 6-13-5z" fill="#c9783f" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><text x="20" y="19" font-size="5.2" text-anchor="middle" font-family="Georgia,serif" fill="currentColor" font-weight="700">ΘΕΜΙΣΤΟ</text><text x="20" y="26" font-size="5.2" text-anchor="middle" font-family="Georgia,serif" fill="currentColor" font-weight="700">ΚΛΗΣ</text></svg>',
+  temple: '<svg class="temple" viewBox="0 0 30 22" aria-hidden="true"><path d="M2 8 15 1l13 7z" fill="#c0392b" stroke="#1f1a16" stroke-width="1.4" stroke-linejoin="round"/><rect x="3" y="8" width="24" height="2.5" fill="#f5f1e8" stroke="#1f1a16" stroke-width="1"/><g fill="#f5f1e8" stroke="#1f1a16" stroke-width="1"><rect x="5" y="11" width="3" height="7"/><rect x="11" y="11" width="3" height="7"/><rect x="16" y="11" width="3" height="7"/><rect x="22" y="11" width="3" height="7"/></g><rect x="2" y="18" width="26" height="3" fill="#f5f1e8" stroke="#1f1a16" stroke-width="1"/></svg>'
+};
+
+/* =====================================================================
+   HJÆLPEFUNKTIONER
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const fmt = n => n.toLocaleString("da-DK") + " ₯";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const reducedMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const gen = n => /[sxzSXZ]$/.test(n) ? n + "'" : n + "s";
+const isOwnable = i => SPACES[i].type === "prop" || SPACES[i].type === "port";
+const groupColor = i => GROUPS[SPACES[i].group].color;
+function tokenHTML(p, cls = "mini-token") {
+  return `<span class="${cls}" style="background:${p.color}" title="${esc(p.name)}">${p.letter}</span>`;
+}
+
+/* =====================================================================
+   BRÆTGENGIVELSE
+   ===================================================================== */
+const spaceEls = [];
+
+function gridPos(i) {
+  if (i === 0) return { r: 9, c: 9, side: "corner" };
+  if (i < 8) return { r: 9, c: 9 - i, side: "bottom" };
+  if (i === 8) return { r: 9, c: 1, side: "corner" };
+  if (i < 16) return { r: 9 - (i - 8), c: 1, side: "left" };
+  if (i === 16) return { r: 1, c: 1, side: "corner" };
+  if (i < 24) return { r: 1, c: 1 + (i - 16), side: "top" };
+  if (i === 24) return { r: 1, c: 9, side: "corner" };
+  return { r: 1 + (i - 24), c: 9, side: "right" };
+}
+
+function renderBoard() {
+  const board = $("#board");
+  board.querySelectorAll(".space").forEach(e => e.remove());
+  spaceEls.length = 0;
+  SPACES.forEach((sp, i) => {
+    const g = gridPos(i);
+    const el = document.createElement("div");
+    el.className = "space " + g.side;
+    el.style.gridRow = g.r;
+    el.style.gridColumn = g.c;
+    el.dataset.i = i;
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", sp.name);
+    let html = "";
+    switch (sp.type) {
+      case "prop":
+        html = `<div class="band" style="background:${groupColor(i)}"></div>
+          <div class="sp-body"><div class="sp-name">${sp.name}</div><div class="sp-price num">${fmt(sp.price)}</div></div>
+          <div class="owner-strip"></div>`;
+        break;
+      case "port":
+        el.classList.add("special");
+        html = `<div class="sp-body"><div class="sp-name">${sp.name}</div><div class="sp-icon">${ICON.ship}</div><div class="sp-price num">${fmt(sp.price)}</div></div>
+          <div class="owner-strip"></div>`;
+        break;
+      case "oracle":
+        el.classList.add("special");
+        html = `<div class="sp-body"><div class="sp-icon">${ICON.oracle}</div><div class="sp-name">Oraklets Spådomme</div></div>`;
+        break;
+      case "gunst":
+        el.classList.add("special");
+        html = `<div class="sp-body"><div class="sp-icon" style="color:#b8860b">${ICON.bolt}</div><div class="sp-name">Gudernes Gunst</div></div>`;
+        break;
+      case "tax":
+        el.classList.add("special");
+        html = `<div class="sp-body"><div class="sp-name">${sp.name}</div><div class="sp-icon">${ICON.coin}</div><div class="sp-price num">Betal ${fmt(sp.amount)}</div></div>`;
+        break;
+      case "start":
+        el.classList.add("corner", "c-start");
+        html = `<div class="sp-body"><div class="sp-sub">Modtag ${fmt(PASS_START)} når du passerer</div><div class="sp-icon">${ICON.agora}</div><div class="sp-name">START VED AGORAEN</div><div class="sp-name" style="font-size:1.6em;line-height:.8">&larr;</div></div>`;
+        break;
+      case "exile":
+        el.classList.add("corner", "c-exile");
+        html = `<div class="exile-box"><span>EKSIL</span></div><div class="visit">Kun på<br>besøg</div>`;
+        break;
+      case "truce":
+        el.classList.add("corner", "c-truce");
+        html = `<div class="sp-body"><div class="sp-icon">${ICON.wreath}</div><div class="sp-name">Den Olympiske Våbenhvile</div><div class="sp-sub">Visdomsprøve: vind ${fmt(QUIZ_REWARD)}</div></div>`;
+        break;
+      case "ostra":
+        el.classList.add("corner", "c-ostra");
+        html = `<div class="sp-body"><div class="sp-icon">${ICON.shard}</div><div class="sp-name">OSTRAKISME</div><div class="sp-sub">Gå direkte i eksil</div></div>`;
+        break;
+    }
+    el.innerHTML = html;
+    el.addEventListener("click", () => showSpaceInfo(i));
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showSpaceInfo(i); } });
+    board.appendChild(el);
+    spaceEls[i] = el;
+  });
+  $("#deckOracle").innerHTML = `${ICON.oracle}<span>Oraklets<br>Spådomme</span>`;
+  $("#deckGunst").innerHTML = `<span style="color:#b8860b">${ICON.bolt}</span><span>Gudernes<br>Gunst</span>`;
+  renderDie($("#die1"), 5);
+  renderDie($("#die2"), 2);
+}
+
+function updateBoard() {
+  SPACES.forEach((sp, i) => {
+    if (!isOwnable(i)) return;
+    const ps = state.props[i];
+    const el = spaceEls[i];
+    const strip = el.querySelector(".owner-strip");
+    strip.style.background = ps.owner === null ? "transparent" : state.players[ps.owner].color;
+    el.classList.toggle("mortgaged", ps.mortgaged);
+    if (sp.type === "prop") {
+      const band = el.querySelector(".band");
+      if (ps.level === 5) band.innerHTML = ICON.temple;
+      else band.innerHTML = '<span class="altar"></span>'.repeat(ps.level);
+    }
+    const owner = ps.owner === null ? "ingen ejer" : "ejes af " + state.players[ps.owner].name;
+    el.setAttribute("aria-label", `${sp.name}, ${owner}`);
+  });
+}
+
+/* ---------- Terninger ---------- */
+const PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+function renderDie(el, v) {
+  let h = "";
+  for (let k = 0; k < 9; k++) h += `<span class="pip${PIPS[v].includes(k) ? " on" : ""}"></span>`;
+  el.innerHTML = h;
+  el.setAttribute("aria-label", "Terning viser " + v);
+}
+
+/* ---------- Brikker ---------- */
+function renderTokens() {
+  const layer = $("#tokens");
+  layer.innerHTML = "";
+  state.players.forEach(p => {
+    const t = document.createElement("div");
+    t.className = "token";
+    t.id = "token-" + p.idx;
+    t.innerHTML = `<div class="tk" style="background:${p.color}"><span>${p.letter}</span></div>`;
+    layer.appendChild(t);
+  });
+  positionTokens();
+}
+
+function spotFor(p) {
+  const el = spaceEls[p.pos];
+  let x = el.offsetLeft + el.offsetWidth / 2;
+  let y = el.offsetTop + el.offsetHeight / 2;
+  if (p.pos === EXILE_POS) {
+    if (p.inExile) {
+      const box = el.querySelector(".exile-box");
+      x = el.offsetLeft + box.offsetLeft + box.offsetWidth / 2;
+      y = el.offsetTop + box.offsetTop + box.offsetHeight * 0.6;
+    } else {
+      x = el.offsetLeft + el.offsetWidth * 0.3;
+      y = el.offsetTop + el.offsetHeight * 0.78;
+    }
+  }
+  return { x, y, key: p.pos + (p.pos === EXILE_POS && p.inExile ? "x" : "") };
+}
+
+function positionTokens() {
+  if (!state.players.length) return;
+  const size = parseFloat(getComputedStyle($("#board")).fontSize) * 2.5;
+  const groups = {};
+  state.players.forEach(p => {
+    const t = document.getElementById("token-" + p.idx);
+    if (!t) return;
+    t.hidden = p.bankrupt;
+    t.classList.toggle("active", p.idx === state.current && state.phase !== "over");
+    if (p.bankrupt) return;
+    const s = spotFor(p);
+    (groups[s.key] = groups[s.key] || []).push({ p, s, t });
+  });
+  Object.values(groups).forEach(list => {
+    const n = list.length;
+    list.forEach((o, k) => {
+      let dx = 0, dy = 0;
+      if (n === 2) dx = (k === 0 ? -0.32 : 0.32) * size;
+      else if (n > 2) { dx = (k % 2 ? 0.3 : -0.3) * size; dy = (k < 2 ? -0.3 : 0.3) * size; }
+      o.t.style.left = (o.s.x + dx) + "px";
+      o.t.style.top = (o.s.y + dy) + "px";
+    });
+  });
+}
+
+/* ---------- Størrelse ---------- */
+function fitBoard() {
+  const wrap = $("#boardWrap");
+  const board = $("#board");
+  const narrow = window.innerWidth <= 1000;
+  const w = wrap.clientWidth;
+  const h = window.innerHeight - 32;
+  const size = Math.max(300, Math.floor(narrow ? w : Math.min(w, h)));
+  board.style.width = size + "px";
+  board.style.height = size + "px";
+  board.style.fontSize = (size / 82) + "px";
+  positionTokens();
+}
+
+/* =====================================================================
+   TILSTAND
+   ===================================================================== */
+const state = {
+  players: [],       // {idx,name,color,letter,city,money,pos,inExile,exileTries,amnesty:[],bankrupt}
+  props: {},         // feltindeks -> {owner,level,mortgaged}
+  current: 0,
+  phase: "setup",    // setup | roll | busy | end | over
+  doubles: 0,
+  turnCount: 0,
+  decks: { oracle: [], gunst: [] },
+  trivia: []
+};
+const cur = () => state.players[state.current];
+const activePlayers = () => state.players.filter(p => !p.bankrupt);
+
+/* =====================================================================
+   MODALER (promise-baserede, i kø)
+   ===================================================================== */
+let modalChain = Promise.resolve();
+function showModal(opts) {
+  const run = () => new Promise(resolve => {
+    const ov = $("#modalOverlay");
+    const m = document.createElement("div");
+    m.className = "modal " + (opts.cls || "");
+    m.setAttribute("role", "dialog");
+    m.setAttribute("aria-modal", "true");
+    const headStyle = opts.headColor ? `style="background:${opts.headColor};color:${opts.headText || "#fff"}"` : "";
+    m.innerHTML = `
+      <div class="modal-head" ${headStyle}>${opts.icon || ""}<h2>${opts.kicker ? `<span class="kicker">${opts.kicker}</span>` : ""}${opts.title}</h2></div>
+      <div class="modal-body"></div>
+      <div class="modal-foot"></div>`;
+    const body = m.querySelector(".modal-body");
+    if (typeof opts.body === "string") body.innerHTML = opts.body;
+    const foot = m.querySelector(".modal-foot");
+    let done = false;
+    const close = v => {
+      if (done) return;
+      done = true;
+      ov.hidden = true;
+      ov.innerHTML = "";
+      resolve(v);
+    };
+    (opts.buttons || [{ label: "OK", value: true, cls: "primary" }]).forEach(b => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn " + (b.cls || "");
+      btn.textContent = b.label;
+      btn.disabled = !!b.disabled;
+      if (b.title) btn.title = b.title;
+      btn.addEventListener("click", () => close(b.value));
+      foot.appendChild(btn);
+    });
+    if (!foot.children.length) foot.remove();
+    ov.innerHTML = "";
+    ov.appendChild(m);
+    ov.hidden = false;
+    if (opts.mount) opts.mount(body, close, m);
+    const first = m.querySelector(".modal-foot .btn:not(:disabled)") || m.querySelector(".btn:not(:disabled)");
+    if (first) setTimeout(() => first.focus(), 30);
+  });
+  const p = modalChain.then(run);
+  modalChain = p.catch(() => {});
+  return p;
+}
+
+/* =====================================================================
+   KRØNIKE OG SIDEBJÆLKE
+   ===================================================================== */
+function log(msg, p = null) {
+  const box = $("#log");
+  const d = document.createElement("div");
+  d.className = "log-entry" + (p ? "" : " sys");
+  if (p) d.style.borderLeftColor = p.color;
+  d.innerHTML = msg;
+  box.prepend(d);
+  while (box.children.length > 150) box.lastChild.remove();
+}
+
+function ownedBy(pIdx) {
+  return SPACES.map((s, i) => i).filter(i => isOwnable(i) && state.props[i].owner === pIdx);
+}
+function netWorth(p) {
+  let w = p.money;
+  ownedBy(p.idx).forEach(i => {
+    const sp = SPACES[i], ps = state.props[i];
+    w += ps.mortgaged ? sp.price / 2 : sp.price;
+    if (sp.type === "prop") w += ps.level * GROUPS[sp.group].build;
+  });
+  return w;
+}
+
+function updateUI() {
+  if (!state.players.length) return;
+  const p = cur();
+  $("#turnName").innerHTML = `${tokenHTML(p)}<span>${esc(p.name)}</span>`;
+  $("#turnPanel").style.borderLeftColor = p.color;
+  $("#statMoney").textContent = fmt(p.money);
+  $("#statProps").textContent = ownedBy(p.idx).length;
+  $("#statWorth").textContent = fmt(netWorth(p));
+  const round = Math.floor(state.turnCount / Math.max(1, activePlayers().length)) + 1;
+  $("#roundInfo").textContent = "Runde " + round;
+
+  let status = "";
+  if (state.phase === "over") status = "Spillet er slut.";
+  else if (p.inExile) status = `I eksil: forsøg ${p.exileTries + 1} af 3.`;
+  else if (state.phase === "roll" && state.doubles > 0) status = "To ens! Du må kaste igen.";
+  else if (state.phase === "roll") status = "Kast terningerne for at rykke.";
+  else if (state.phase === "end") status = "Byg, pantsæt eller afslut din tur.";
+  if (p.amnesty.length) status += ` Du har ${p.amnesty.length} amnestikort.`;
+  $("#statusLine").textContent = status;
+
+  $("#rollBtn").disabled = state.phase !== "roll";
+  $("#rollBtn").textContent = state.doubles > 0 && state.phase === "roll" ? "Kast igen" : "Kast terningerne";
+  $("#endBtn").disabled = state.phase !== "end";
+  $("#manageBtn").disabled = !(state.phase === "roll" || state.phase === "end") || ownedBy(p.idx).length === 0;
+
+  const chips = $("#propChips");
+  const mine = ownedBy(p.idx);
+  chips.innerHTML = mine.length ? "" : '<span class="empty">Ingen endnu. Land på en ledig ejendom for at købe den.</span>';
+  mine.forEach(i => {
+    const ps = state.props[i];
+    const c = document.createElement("span");
+    c.className = "chip" + (ps.mortgaged ? " mort" : "");
+    const lvl = SPACES[i].type === "prop" && ps.level ? (ps.level === 5 ? " · tempel" : ` · ${ps.level} alt${ps.level > 1 ? "re" : "er"}`) : "";
+    c.innerHTML = `<i style="background:${groupColor(i)}"></i>${SPACES[i].name}${lvl}`;
+    c.addEventListener("click", () => showSpaceInfo(i));
+    chips.appendChild(c);
+  });
+
+  const list = $("#playersList");
+  list.innerHTML = "";
+  state.players.forEach(pl => {
+    const r = document.createElement("div");
+    r.className = "p-row" + (pl.idx === state.current ? " current" : "") + (pl.bankrupt ? " out" : "");
+    const meta = pl.bankrupt ? "Fallit" : `${ownedBy(pl.idx).length} ejendomme${pl.inExile ? " · i eksil" : ""} · felt: ${SPACES[pl.pos].name}`;
+    r.innerHTML = `${tokenHTML(pl)}<div><div>${esc(pl.name)}</div><div class="p-meta">${esc(meta)}</div></div><div class="p-money num">${fmt(pl.money)}</div>`;
+    list.appendChild(r);
+  });
+  updateBoard();
+  positionTokens();
+}
+
+/* =====================================================================
+   SKØDER OG FELTINFORMATION
+   ===================================================================== */
+function deedHTML(i, highlightRent = null) {
+  const sp = SPACES[i];
+  const ps = state.props[i];
+  let h = `<div class="fact"><span class="lbl">Historisk fakta</span>${sp.fact}</div>`;
+  if (sp.type === "prop") {
+    const g = GROUPS[sp.group];
+    const rows = [
+      ["Grundleje", sp.rent[0]],
+      ["Med hele farvegruppen", sp.rent[0] * 2],
+      ["Med 1 alter", sp.rent[1]],
+      ["Med 2 altre", sp.rent[2]],
+      ["Med 3 altre", sp.rent[3]],
+      ["Med 4 altre", sp.rent[4]],
+      ["Med tempel", sp.rent[5]]
+    ];
+    const curRow = ps.owner === null ? -1 : (ps.level > 0 ? ps.level + 1 : (ownsGroup(ps.owner, sp.group) ? 1 : 0));
+    h += `<table class="rent-table">${rows.map((r, k) => `<tr class="${k === curRow ? "hl" : ""}"><td>${r[0]}</td><td>${fmt(r[1])}</td></tr>`).join("")}</table>`;
+    h += `<div class="deed-foot"><span>Pris: <b>${fmt(sp.price)}</b></span><span>Alter eller tempel: <b>${fmt(g.build)}</b> stk.</span><span>Pantværdi: <b>${fmt(sp.price / 2)}</b></span></div>`;
+  } else {
+    const n = ps.owner === null ? 0 : ownedBy(ps.owner).filter(k => SPACES[k].type === "port").length;
+    h += `<table class="rent-table">${PORT_RENT.map((r, k) => `<tr class="${n === k + 1 ? "hl" : ""}"><td>Ejer ${k + 1} havn${k ? "e" : ""}</td><td>${fmt(r)}</td></tr>`).join("")}</table>`;
+    h += `<div class="deed-foot"><span>Pris: <b>${fmt(sp.price)}</b></span><span>Pantværdi: <b>${fmt(sp.price / 2)}</b></span></div>`;
+  }
+  if (ps.owner !== null) {
+    const o = state.players[ps.owner];
+    let st = "";
+    if (sp.type === "prop" && ps.level) st = ps.level === 5 ? ", med tempel" : `, med ${ps.level} alt${ps.level > 1 ? "re" : "er"}`;
+    if (ps.mortgaged) st += ", pantsat";
+    h += `<div class="owner-line">${tokenHTML(o)}<span>Ejes af <b>${esc(o.name)}</b>${st}</span></div>`;
+  } else {
+    h += `<div class="owner-line"><span>Ledig: kan købes af den, der lander her.</span></div>`;
+  }
+  if (highlightRent !== null) h += `<div class="effect minus">Leje: ${fmt(highlightRent)}</div>`;
+  return h;
+}
+
+function deedModalOpts(i, extra = {}) {
+  const sp = SPACES[i];
+  const g = GROUPS[sp.group];
+  const isPort = sp.type === "port";
+  return Object.assign({
+    kicker: g.name,
+    title: sp.name,
+    headColor: g.color,
+    headText: (sp.group === "games" || sp.group === "philo") ? "#1f1a16" : "#fff",
+    icon: isPort ? `<span style="color:#f5f1e8">${ICON.ship}</span>` : "",
+    body: deedHTML(i)
+  }, extra);
+}
+
+function showSpaceInfo(i) {
+  if (state.phase === "setup") return;
+  if (!$("#modalOverlay").hidden) return;
+  const sp = SPACES[i];
+  if (isOwnable(i)) { showModal(deedModalOpts(i, { buttons: [{ label: "Luk", value: 0, cls: "primary" }] })); return; }
+  const icons = { start: ICON.agora, oracle: ICON.oracle, gunst: ICON.bolt, tax: ICON.coin, truce: ICON.wreath, ostra: ICON.shard, exile: ICON.shard };
+  let body = sp.fact ? `<div class="fact"><span class="lbl">Historisk fakta</span>${sp.fact}</div>` : "";
+  const extra = {
+    start: `<p>Hver gang du passerer eller lander her, modtager du <b>${fmt(PASS_START)}</b>.</p>`,
+    oracle: "<p>Træk et kort fra Pythias bunke. Oraklets spådomme kan både give og tage.</p>",
+    gunst: "<p>Træk et kort fra gudernes bunke. Olympens guder er oftest gavmilde, men ikke altid.</p>",
+    tax: `<p>Lander du her, skal du betale <b>${fmt(sp.amount || 0)}</b> til statskassen.</p>`,
+    exile: `<p>Er du i eksil, kan du betale <b>${fmt(EXILE_FEE)}</b>, bruge et amnestikort eller forsøge at slå to ens. Efter tre mislykkede forsøg skal du betale og rykke. Lander du her ved et almindeligt kast, er du kun på besøg.</p>`,
+    truce: "",
+    ostra: "<p>Lander du her, sendes du direkte i eksil uden at passere Agoraen.</p>"
+  }[sp.type] || "";
+  showModal({ title: sp.name, icon: `<span style="color:#f5f1e8">${icons[sp.type] || ""}</span>`, body: body + extra, buttons: [{ label: "Luk", value: 0, cls: "primary" }] });
+}
+
+/* =====================================================================
+   REGLER: EJERSKAB, LEJE OG BYGGERI
+   ===================================================================== */
+const groupMembers = g => SPACES.map((s, i) => i).filter(i => SPACES[i].group === g);
+const ownsGroup = (pIdx, g) => groupMembers(g).every(i => state.props[i].owner === pIdx);
+
+function calcRent(i) {
+  const sp = SPACES[i], ps = state.props[i];
+  if (sp.type === "port") {
+    const n = ownedBy(ps.owner).filter(k => SPACES[k].type === "port").length;
+    return PORT_RENT[n - 1];
+  }
+  if (ps.level > 0) return sp.rent[ps.level];
+  return ownsGroup(ps.owner, sp.group) ? sp.rent[0] * 2 : sp.rent[0];
+}
+
+function canBuild(p, i) {
+  const sp = SPACES[i], ps = state.props[i];
+  if (sp.type !== "prop" || ps.owner !== p.idx || ps.level >= 5) return false;
+  if (!ownsGroup(p.idx, sp.group)) return false;
+  const mem = groupMembers(sp.group);
+  if (mem.some(k => state.props[k].mortgaged)) return false;
+  const min = Math.min(...mem.map(k => state.props[k].level));
+  return ps.level === min && p.money >= GROUPS[sp.group].build;
+}
+function buildBlockReason(p, i) {
+  const sp = SPACES[i], ps = state.props[i];
+  if (sp.type !== "prop") return "Havne kan ikke bebygges";
+  if (ps.level >= 5) return "Der står allerede et tempel";
+  if (!ownsGroup(p.idx, sp.group)) return "Du skal eje hele farvegruppen";
+  const mem = groupMembers(sp.group);
+  if (mem.some(k => state.props[k].mortgaged)) return "En ejendom i gruppen er pantsat";
+  const min = Math.min(...mem.map(k => state.props[k].level));
+  if (ps.level !== min) return "Byg jævnt i gruppen først";
+  if (p.money < GROUPS[sp.group].build) return "Ikke nok drachmer";
+  return "";
+}
+function canSell(p, i) {
+  const sp = SPACES[i], ps = state.props[i];
+  if (sp.type !== "prop" || ps.owner !== p.idx || ps.level === 0) return false;
+  const max = Math.max(...groupMembers(sp.group).map(k => state.props[k].level));
+  return ps.level === max;
+}
+function canMortgage(p, i) {
+  const sp = SPACES[i], ps = state.props[i];
+  if (ps.owner !== p.idx || ps.mortgaged) return false;
+  if (sp.type === "prop" && groupMembers(sp.group).some(k => state.props[k].level > 0)) return false;
+  return true;
+}
+const unmortgageCost = i => Math.round(SPACES[i].price / 2 * 1.1);
+
+function liquidationValue(p) {
+  let v = 0;
+  ownedBy(p.idx).forEach(i => {
+    const sp = SPACES[i], ps = state.props[i];
+    if (sp.type === "prop") v += ps.level * GROUPS[sp.group].build / 2;
+    if (!ps.mortgaged) v += sp.price / 2;
+  });
+  return v;
+}
+
+/* =====================================================================
+   BETALINGER, GÆLD OG FALLIT
+   ===================================================================== */
+async function payment(p, amount, creditor, reason) {
+  if (amount <= 0 || p.bankrupt) return true;
+  while (p.money < amount) {
+    const assets = liquidationValue(p);
+    const canCover = p.money + assets >= amount;
+    const choice = await showModal({
+      kicker: "Gældsadvarsel",
+      title: `${esc(p.name)} mangler drachmer`,
+      headColor: "#c0392b",
+      body: `<div class="warn"><b>${esc(p.name)}</b> skal betale <b>${fmt(amount)}</b> (${reason})${creditor ? " til " + esc(creditor.name) : ""}, men har kun <b>${fmt(p.money)}</b>.</div>
+        <p>Du kan rejse <b>${fmt(assets)}</b> ved at sælge altre og templer til halv pris og pantsætte dine ejendomme.</p>
+        ${canCover ? "<p>Det er nok til at dække gælden. Skaf pengene i ejendomsoversigten.</p>"
+                   : "<p><b>Det er ikke nok.</b> Du kan ikke dække gælden og må erklære dig fallit.</p>"}`,
+      buttons: [
+        { label: "Sælg og pantsæt", value: "manage", cls: "primary", disabled: assets <= 0 },
+        { label: canCover ? "Giv op og gå fallit" : "Erklær fallit", value: "bankrupt", cls: "danger" }
+      ]
+    });
+    if (choice === "manage") { await openManager(p, { debt: amount }); continue; }
+    await declareBankruptcy(p, creditor);
+    return false;
+  }
+  p.money -= amount;
+  if (creditor) creditor.money += amount;
+  updateUI();
+  return true;
+}
+
+async function declareBankruptcy(p, creditor) {
+  ownedBy(p.idx).forEach(i => {
+    const sp = SPACES[i], ps = state.props[i];
+    if (sp.type === "prop" && ps.level) { p.money += ps.level * GROUPS[sp.group].build / 2; ps.level = 0; }
+    if (creditor) ps.owner = creditor.idx;
+    else { ps.owner = null; ps.mortgaged = false; }
+  });
+  if (creditor) creditor.money += p.money;
+  p.money = 0;
+  p.bankrupt = true;
+  p.inExile = false;
+  p.amnesty.forEach(c => state.decks[c.deck].push(c.idx));
+  p.amnesty = [];
+  log(`<b>${esc(p.name)}</b> er gået fallit${creditor ? " og overdrager alt til " + esc(creditor.name) : ""}.`, p);
+  updateUI();
+  await showModal({
+    kicker: "Fallit",
+    title: `${esc(p.name)} har mistet alt`,
+    headColor: "#1f1a16",
+    headText: "#d4a72c",
+    body: `<p>Som så mange tyranner og strateger før dig må du forlade den politiske scene.</p>
+      <p>${creditor ? `Alle ejendomme og resterende midler overgår til <b>${esc(creditor.name)}</b>.` : "Alle ejendomme vender tilbage til statskassen og kan købes igen."}</p>`,
+    buttons: [{ label: "Videre", value: 1, cls: "primary" }]
+  });
+  if (activePlayers().length === 1) await gameOver(activePlayers()[0]);
+}
+
+async function gameOver(winner) {
+  state.phase = "over";
+  state.current = winner.idx;
+  updateUI();
+  log(`<b>${esc(winner.name)}</b> har vundet spillet!`, winner);
+  const ranking = state.players.slice().sort((a, b) => (a.bankrupt - b.bankrupt) || netWorth(b) - netWorth(a));
+  const v = await showModal({
+    kicker: "Sejr",
+    title: `${esc(winner.name)} hersker over Hellas!`,
+    headColor: winner.color,
+    icon: ICON.wreath,
+    body: `<p class="card-text">Som Perikles i Athens guldalder står ${esc(winner.name)} tilbage som den mægtigste borger i den græske verden.</p>
+      <table class="rent-table">${ranking.map((p, k) => `<tr><td>${k + 1}. ${tokenHTML(p)} ${esc(p.name)}</td><td>${p.bankrupt ? "Fallit" : fmt(netWorth(p))}</td></tr>`).join("")}</table>`,
+    buttons: [{ label: "Se brættet", value: "stay" }, { label: "Nyt spil", value: "new", cls: "primary" }]
+  });
+  if (v === "new") showSetup();
+}
+
+/* =====================================================================
+   EJENDOMSADMINISTRATION (byg, sælg, pantsæt)
+   ===================================================================== */
+function openManager(p, opts = {}) {
+  return showModal({
+    kicker: opts.debt ? `Skaf ${fmt(opts.debt)}` : "Ejendomme og byggeri",
+    title: esc(p.name),
+    headColor: p.color,
+    cls: "",
+    body: "",
+    buttons: [{ label: opts.debt ? "Tilbage til gælden" : "Luk", value: 0, cls: "primary" }],
+    mount(body) {
+      const draw = () => {
+        const mine = ownedBy(p.idx);
+        body.innerHTML = `<div class="mg-head"><span>Drachmer: <span class="num">${fmt(p.money)}</span></span>${opts.debt ? `<span>Gæld: <span class="num">${fmt(opts.debt)}</span></span>` : ""}</div>
+          <p style="font-size:.85rem;color:#4a4036">Byg altre jævnt i en komplet farvegruppe. Det femte byggeri bliver til et tempel. Bygninger sælges for halv pris; pantsætning giver halv grundpris, og pantet indfris med 10 % rente.</p>
+          <div class="mg-list"></div>`;
+        const listEl = body.querySelector(".mg-list");
+        if (!mine.length) listEl.innerHTML = '<span class="empty">Du ejer ingen ejendomme.</span>';
+        mine.forEach(i => {
+          const sp = SPACES[i], ps = state.props[i];
+          const row = document.createElement("div");
+          row.className = "mg-row";
+          const lvl = sp.type === "prop" ? (ps.level === 5 ? "Tempel" : `${ps.level} alt${ps.level === 1 ? "er" : "re"}`) : "Havn";
+          row.innerHTML = `<span class="bar" style="background:${groupColor(i)}"></span>
+            <div><div class="nm">${sp.name}</div><div class="info">${lvl}${ps.mortgaged ? " · <b style='color:#c0392b'>pantsat</b>" : ""} · leje nu ${ps.mortgaged ? "0 ₯" : fmt(calcRent(i))}</div></div>
+            <div class="acts"></div>`;
+          const acts = row.querySelector(".acts");
+          const add = (label, fn, enabled, title, cls = "") => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn small " + cls;
+            b.textContent = label;
+            b.disabled = !enabled;
+            if (title) b.title = title;
+            b.addEventListener("click", () => { fn(); updateUI(); draw(); });
+            acts.appendChild(b);
+          };
+          if (sp.type === "prop") {
+            const cost = GROUPS[sp.group].build;
+            if (!opts.debt) {
+              add(`${ps.level === 4 ? "Byg tempel" : "Byg alter"} (${fmt(cost)})`, () => {
+                p.money -= cost; ps.level++;
+                log(`${esc(p.name)} bygger ${ps.level === 5 ? "et tempel" : "et alter"} på ${sp.name}.`, p);
+              }, canBuild(p, i), buildBlockReason(p, i), "gold");
+            }
+            if (ps.level > 0) {
+              add(`Sælg (+${fmt(cost / 2)})`, () => {
+                p.money += cost / 2; ps.level--;
+                log(`${esc(p.name)} sælger en bygning på ${sp.name}.`, p);
+              }, canSell(p, i), canSell(p, i) ? "" : "Sælg jævnt i gruppen");
+            }
+          }
+          if (!ps.mortgaged) {
+            add(`Pantsæt (+${fmt(sp.price / 2)})`, () => {
+              ps.mortgaged = true; p.money += sp.price / 2;
+              log(`${esc(p.name)} pantsætter ${sp.name}.`, p);
+            }, canMortgage(p, i), canMortgage(p, i) ? "" : "Sælg først bygningerne i gruppen");
+          } else if (!opts.debt) {
+            const c = unmortgageCost(i);
+            add(`Indfri (${fmt(c)})`, () => {
+              ps.mortgaged = false; p.money -= c;
+              log(`${esc(p.name)} indfrier pantet i ${sp.name}.`, p);
+            }, p.money >= c, p.money >= c ? "" : "Ikke nok drachmer");
+          }
+          listEl.appendChild(row);
+        });
+      };
+      draw();
+    }
+  });
+}
+
+/* =====================================================================
+   TERNINGER OG BEVÆGELSE
+   ===================================================================== */
+async function rollDice() {
+  const d1 = 1 + Math.floor(Math.random() * 6);
+  const d2 = 1 + Math.floor(Math.random() * 6);
+  const e1 = $("#die1"), e2 = $("#die2");
+  $("#diceSum").innerHTML = "&nbsp;";
+  if (!reducedMotion()) {
+    e1.classList.add("rolling"); e2.classList.add("rolling");
+    for (let k = 0; k < 9; k++) {
+      renderDie(e1, 1 + Math.floor(Math.random() * 6));
+      renderDie(e2, 1 + Math.floor(Math.random() * 6));
+      await sleep(70);
+    }
+    e1.classList.remove("rolling"); e2.classList.remove("rolling");
+  }
+  renderDie(e1, d1); renderDie(e2, d2);
+  $("#diceSum").textContent = (d1 + d2) + (d1 === d2 ? " · to ens" : "");
+  await sleep(250);
+  return [d1, d2];
+}
+
+async function hop(p) {
+  positionTokens();
+  const t = document.getElementById("token-" + p.idx);
+  if (t && !reducedMotion()) {
+    t.classList.remove("hop"); void t.offsetWidth; t.classList.add("hop");
+  }
+  await sleep(reducedMotion() ? 20 : 180);
+}
+
+async function moveSteps(p, steps) {
+  const dir = steps < 0 ? -1 : 1;
+  for (let k = 0; k < Math.abs(steps); k++) {
+    p.pos = (p.pos + dir + BOARD_SIZE) % BOARD_SIZE;
+    if (p.pos === 0 && dir > 0) {
+      p.money += PASS_START;
+      log(`${esc(p.name)} passerer Agoraen og modtager ${fmt(PASS_START)}.`, p);
+      updateUI();
+    }
+    await hop(p);
+  }
+  updateUI();
+}
+
+async function moveTo(p, target) {
+  await moveSteps(p, (target - p.pos + BOARD_SIZE) % BOARD_SIZE);
+}
+
+async function sendToExile(p, why) {
+  p.pos = EXILE_POS;
+  p.inExile = true;
+  p.exileTries = 0;
+  state.doubles = 0;
+  log(`${esc(p.name)} sendes i eksil: ${why}`, p);
+  updateUI();
+  await sleep(250);
+}
+
+/* =====================================================================
+   FELTER
+   ===================================================================== */
+async function resolveSpace(p) {
+  const i = p.pos;
+  const sp = SPACES[i];
+  switch (sp.type) {
+    case "prop":
+    case "port": return handleOwnable(p, i);
+    case "tax": {
+      log(`${esc(p.name)} lander på ${sp.name} og skal betale ${fmt(sp.amount)}.`, p);
+      await showModal({
+        kicker: "Statskassen", title: sp.name, icon: `<span style="color:#f5f1e8">${ICON.coin}</span>`,
+        body: `<div class="fact"><span class="lbl">Historisk fakta</span>${sp.fact}</div><div class="effect minus">Betal ${fmt(sp.amount)}</div>`,
+        buttons: [{ label: `Betal ${fmt(sp.amount)}`, value: 1, cls: "primary" }]
+      });
+      return payment(p, sp.amount, null, sp.name);
+    }
+    case "oracle":
+    case "gunst": return drawCard(p, sp.type);
+    case "ostra":
+      await showModal({
+        kicker: "Folkeforsamlingen har stemt", title: "Ostrakisme!", headColor: "#a8471c",
+        icon: `<span style="color:#1f1a16">${ICON.shard}</span>`,
+        body: `<div class="fact"><span class="lbl">Historisk fakta</span>${sp.fact}</div><div class="effect minus">Gå direkte i eksil. Du passerer ikke Agoraen og modtager ikke ${fmt(PASS_START)}.</div>`,
+        buttons: [{ label: "Forlad Athen", value: 1, cls: "primary" }]
+      });
+      return sendToExile(p, "ostrakiseret af folkeforsamlingen.");
+    case "truce": return triviaQuiz(p);
+    case "start": log(`${esc(p.name)} står midt på Agoraen.`, p); return;
+    case "exile": log(`${esc(p.name)} er kun på besøg hos de landsforviste.`, p); return;
+  }
+}
+
+async function handleOwnable(p, i) {
+  const sp = SPACES[i], ps = state.props[i];
+  if (ps.owner === null) {
+    const afford = p.money >= sp.price;
+    const v = await showModal(deedModalOpts(i, {
+      body: deedHTML(i) + (afford ? "" : `<div class="warn">Du har kun ${fmt(p.money)} og kan ikke betale ${fmt(sp.price)}.</div>`),
+      buttons: [
+        { label: "Afslå", value: "pass" },
+        { label: `Køb for ${fmt(sp.price)}`, value: "buy", cls: "primary", disabled: !afford }
+      ]
+    }));
+    if (v === "buy") {
+      p.money -= sp.price;
+      ps.owner = p.idx;
+      log(`${esc(p.name)} køber <b>${sp.name}</b> for ${fmt(sp.price)}.`, p);
+      if (sp.type === "prop" && ownsGroup(p.idx, sp.group)) log(`${esc(p.name)} ejer nu hele gruppen ${GROUPS[sp.group].name}, og lejen fordobles.`, p);
+    } else {
+      log(`${esc(p.name)} afslår at købe ${sp.name}.`, p);
+    }
+    updateUI();
+    return;
+  }
+  if (ps.owner === p.idx) { log(`${esc(p.name)} hviler på sin egen ejendom ${sp.name}.`, p); return; }
+  const owner = state.players[ps.owner];
+  if (ps.mortgaged) { log(`${sp.name} er pantsat; ${esc(p.name)} betaler ingen leje.`, p); return; }
+  const rent = calcRent(i);
+  const ok = await payment(p, rent, owner, `leje for ${sp.name}`);
+  if (ok) {
+    log(`${esc(p.name)} betaler ${fmt(rent)} i leje til ${esc(owner.name)} for ${sp.name}.`, p);
+    await showModal(deedModalOpts(i, {
+      kicker: `Leje betalt til ${esc(owner.name)}`,
+      body: deedHTML(i, rent),
+      buttons: [{ label: "Videre", value: 1, cls: "primary" }]
+    }));
+  }
+}
+
+/* =====================================================================
+   KORT
+   ===================================================================== */
+function drawFromDeck(type) {
+  const deck = state.decks[type];
+  const idx = deck.shift();
+  const card = (type === "oracle" ? ORACLE_CARDS : GUNST_CARDS)[idx];
+  if (card.effect.type !== "amnesty") deck.push(idx);
+  return { idx, card };
+}
+
+async function drawCard(p, type) {
+  const { idx, card } = drawFromDeck(type);
+  const isOracle = type === "oracle";
+  const e = card.effect;
+  const sign = e.type === "money" ? (e.amount > 0 ? "plus" : "minus")
+             : e.type === "collectEach" || e.type === "amnesty" ? "plus"
+             : e.type === "payEach" || e.type === "repairs" || e.type === "exile" ? "minus" : "";
+  await showModal({
+    cls: isOracle ? "card-oracle" : "card-gunst",
+    kicker: isOracle ? "Pythia taler" : "Fra Olympen",
+    title: isOracle ? "Oraklets Spådomme" : "Gudernes Gunst",
+    icon: isOracle ? ICON.oracle : `<span style="color:#b8860b">${ICON.bolt}</span>`,
+    body: `<p class="card-text">${card.text}</p><div class="effect ${sign}">${card.label}</div>`,
+    buttons: [{ label: "Videre", value: 1, cls: "primary" }]
+  });
+  log(`${esc(p.name)} trækker ${isOracle ? "Oraklets Spådomme" : "Gudernes Gunst"}: ${card.label}.`, p);
+  const others = activePlayers().filter(o => o !== p);
+  switch (e.type) {
+    case "money":
+      if (e.amount > 0) { p.money += e.amount; updateUI(); }
+      else await payment(p, -e.amount, null, "kort");
+      break;
+    case "moveTo":
+      await moveTo(p, e.to);
+      await resolveSpace(p);
+      break;
+    case "moveBy":
+      await moveSteps(p, e.steps);
+      await resolveSpace(p);
+      break;
+    case "nearestPort": {
+      let k = p.pos;
+      do { k = (k + 1) % BOARD_SIZE; } while (SPACES[k].type !== "port");
+      await moveTo(p, k);
+      await resolveSpace(p);
+      break;
+    }
+    case "exile":
+      await sendToExile(p, "efter et kort.");
+      break;
+    case "amnesty":
+      p.amnesty.push({ deck: type, idx });
+      updateUI();
+      break;
+    case "payEach":
+      for (const o of others) {
+        if (p.bankrupt || state.phase === "over") break;
+        await payment(p, e.amount, o, "korleder ved Dionysosfesten");
+      }
+      break;
+    case "collectEach":
+      for (const o of others) {
+        if (state.phase === "over") break;
+        await payment(o, e.amount, p, `hyldest til ${esc(p.name)}`);
+      }
+      break;
+    case "repairs": {
+      let altars = 0, temples = 0;
+      ownedBy(p.idx).forEach(i => {
+        const lv = state.props[i].level || 0;
+        if (lv === 5) temples++; else altars += lv;
+      });
+      const cost = altars * e.altar + temples * e.temple;
+      if (cost > 0) await payment(p, cost, null, `${altars} altre og ${temples} templer`);
+      else log(`${esc(p.name)} har ingen bygninger og slipper for udgiften.`, p);
+      break;
+    }
+  }
+}
+
+/* =====================================================================
+   VISDOMSPRØVE PÅ VÅBENHVILEN
+   ===================================================================== */
+async function triviaQuiz(p) {
+  if (!state.trivia.length) state.trivia = shuffle(TRIVIA.map((q, k) => k));
+  const q = TRIVIA[state.trivia.shift()];
+  const opts = shuffle([q.a, ...q.wrong]);
+  const ans = await showModal({
+    kicker: "Den Olympiske Våbenhvile", title: "Visdomsprøve", headColor: "#3f7a35", icon: ICON.wreath,
+    body: `<div class="fact"><span class="lbl">Historisk fakta</span>${SPACES[16].fact}</div><p class="card-text"><b>${q.q}</b></p>`,
+    buttons: [],
+    mount(body, close) {
+      const box = document.createElement("div");
+      box.className = "quiz-opts";
+      opts.forEach(o => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "btn"; b.textContent = o;
+        b.addEventListener("click", () => close(o));
+        box.appendChild(b);
+      });
+      body.appendChild(box);
+      setTimeout(() => box.querySelector("button").focus(), 30);
+    }
+  });
+  const right = ans === q.a;
+  if (right) { p.money += QUIZ_REWARD; log(`${esc(p.name)} svarer rigtigt i visdomsprøven og vinder ${fmt(QUIZ_REWARD)}.`, p); }
+  else log(`${esc(p.name)} svarer forkert i visdomsprøven.`, p);
+  updateUI();
+  await showModal({
+    kicker: "Visdomsprøve", title: right ? "Rigtigt svar!" : "Forkert svar", headColor: right ? "#3f7a35" : "#a8471c",
+    body: `<div class="effect ${right ? "plus" : "minus"}">${right ? `Du modtager ${fmt(QUIZ_REWARD)}.` : `Det rigtige svar var: ${q.a}.`}</div><p>${q.why}</p>`,
+    buttons: [{ label: "Videre", value: 1, cls: "primary" }]
+  });
+}
+
+/* =====================================================================
+   TURFORLØB
+   ===================================================================== */
+async function onRoll() {
+  if (state.phase !== "roll") return;
+  const p = cur();
+  state.phase = "busy";
+  updateUI();
+  try {
+    if (p.inExile) await exileTurn(p);
+    else await normalRoll(p);
+  } catch (err) {
+    console.error(err);
+    log("Der opstod en fejl i turen; turen kan afsluttes.");
+    if (state.phase === "busy") state.phase = "end";
+  }
+  if (state.phase === "over") { updateUI(); return; }
+  if (cur().bankrupt) { await endTurn(); return; }
+  if (state.phase === "busy") state.phase = "end";
+  updateUI();
+}
+
+async function normalRoll(p) {
+  const [d1, d2] = await rollDice();
+  const dbl = d1 === d2;
+  log(`${esc(p.name)} slår ${d1} og ${d2}${dbl ? " (to ens)" : ""}.`, p);
+  if (dbl) {
+    state.doubles++;
+    if (state.doubles === 3) {
+      await showModal({
+        kicker: "Tre gange to ens", title: "Mistænkt for snyd!", headColor: "#a8471c", icon: ICON.shard,
+        body: "<p>Ingen har så meget held uden gudernes indblanding. Dommerne i Heliaia sender dig i eksil.</p>",
+        buttons: [{ label: "Gå i eksil", value: 1, cls: "primary" }]
+      });
+      await sendToExile(p, "tre gange to ens i træk.");
+      state.phase = "end";
+      return;
+    }
+  }
+  await moveSteps(p, d1 + d2);
+  await resolveSpace(p);
+  if (p.bankrupt || state.phase === "over") return;
+  state.phase = dbl && !p.inExile ? "roll" : "end";
+}
+
+async function exileTurn(p) {
+  const hasAmnesty = p.amnesty.length > 0;
+  const v = await showModal({
+    kicker: `Eksil · forsøg ${p.exileTries + 1} af 3`, title: "Bortvist i Eksil", headColor: "#3b3129", icon: ICON.shard,
+    body: `<div class="fact"><span class="lbl">Historisk fakta</span>${SPACES[EXILE_POS].fact}</div>
+      <p>Vælg, hvordan du vil forsøge at vende hjem. Slår du to ens, rykker du straks frem. Efter tredje mislykkede forsøg skal du betale ${fmt(EXILE_FEE)}.</p>`,
+    buttons: [
+      { label: `Betal ${fmt(EXILE_FEE)}`, value: "pay", disabled: p.money < EXILE_FEE },
+      { label: "Brug amnestikort", value: "card", disabled: !hasAmnesty, cls: "gold" },
+      { label: "Slå to ens", value: "roll", cls: "primary" }
+    ]
+  });
+  if (v === "pay" || v === "card") {
+    if (v === "pay") { p.money -= EXILE_FEE; log(`${esc(p.name)} betaler ${fmt(EXILE_FEE)} og vender hjem fra eksil.`, p); }
+    else {
+      const c = p.amnesty.shift();
+      state.decks[c.deck].push(c.idx);
+      log(`${esc(p.name)} bruger et amnestikort og vender hjem fra eksil.`, p);
+    }
+    p.inExile = false; p.exileTries = 0;
+    updateUI();
+    return normalRoll(p);
+  }
+  const [d1, d2] = await rollDice();
+  if (d1 === d2) {
+    log(`${esc(p.name)} slår ${d1} og ${d2} og vender hjem fra eksil.`, p);
+    p.inExile = false; p.exileTries = 0;
+    await moveSteps(p, d1 + d2);
+    await resolveSpace(p);
+    return;
+  }
+  p.exileTries++;
+  if (p.exileTries >= 3) {
+    log(`${esc(p.name)} slår ${d1} og ${d2}. Tredje forsøg mislykkedes, så der skal betales ${fmt(EXILE_FEE)}.`, p);
+    const ok = await payment(p, EXILE_FEE, null, "løsesum fra eksil");
+    if (!ok) return;
+    p.inExile = false; p.exileTries = 0;
+    await moveSteps(p, d1 + d2);
+    await resolveSpace(p);
+    return;
+  }
+  log(`${esc(p.name)} slår ${d1} og ${d2} og bliver i eksil.`, p);
+}
+
+async function endTurn() {
+  if (state.phase === "over") return;
+  if (!$("#modalOverlay").hidden && !cur().bankrupt) return;
+  state.doubles = 0;
+  let n = state.current;
+  do { n = (n + 1) % state.players.length; } while (state.players[n].bankrupt);
+  state.current = n;
+  state.turnCount++;
+  state.phase = "roll";
+  log(`Det er nu <b>${esc(gen(cur().name))}</b> tur.`, cur());
+  updateUI();
+}
+
+/* =====================================================================
+   OPSÆTNING
+   ===================================================================== */
+let setupCount = 4;
+let setupRows = TOKENS.map(t => ({ name: t.defName, token: t.id }));
+
+function showSetup() {
+  state.phase = "setup";
+  $("#modalOverlay").hidden = true;
+  $("#modalOverlay").innerHTML = "";
+  modalChain = Promise.resolve();
+  const s = $("#setup");
+  s.hidden = false;
+  const draw = () => {
+    s.innerHTML = `
+    <div class="setup-card">
+      <div class="setup-hero">
+        <div class="meander top"></div><div class="meander bot"></div>
+        <h1>ΠΟΛΙΣ</h1>
+        <p>Et brætspil om handel, helligdomme og helte i det antikke Grækenland</p>
+      </div>
+      <form class="setup-body" id="setupForm">
+        <div>
+          <h3 class="section-title" style="color:#6b5f52">Antal spillere</h3>
+          <div class="count-pick">
+            <button type="button" class="btn ${setupCount === 3 ? "sel" : ""}" data-count="3">3 spillere</button>
+            <button type="button" class="btn ${setupCount === 4 ? "sel" : ""}" data-count="4">4 spillere</button>
+          </div>
+        </div>
+        <div class="setup-rows">
+          ${setupRows.slice(0, setupCount).map((r, k) => {
+            const t = TOKENS.find(x => x.id === r.token);
+            return `<div class="setup-row">
+              <div class="big-token" style="background:${t.color}">${t.letter}</div>
+              <div>
+                <label for="pname${k}">Spiller ${k + 1}</label>
+                <input id="pname${k}" data-row="${k}" maxlength="18" value="${esc(r.name)}" autocomplete="off">
+                <div class="tok-pick">
+                  ${TOKENS.map(o => `<button type="button" class="tok-opt ${o.id === r.token ? "sel" : ""}" data-row="${k}" data-token="${o.id}"><span class="mini-token" style="background:${o.color}">${o.letter}</span>${o.label}</button>`).join("")}
+                </div>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+        <details class="rules"><summary>Sådan spiller man</summary>${RULES_HTML}</details>
+        <button type="submit" class="btn primary" style="font-size:1.15rem;padding:14px">Begynd spillet</button>
+      </form>
+    </div>`;
+    s.querySelectorAll("[data-count]").forEach(b => b.addEventListener("click", () => { saveNames(); setupCount = +b.dataset.count; draw(); }));
+    s.querySelectorAll(".tok-opt").forEach(b => b.addEventListener("click", () => {
+      saveNames();
+      const row = +b.dataset.row, tok = b.dataset.token;
+      const other = setupRows.findIndex((r, k) => r.token === tok && k !== row);
+      if (other >= 0) setupRows[other].token = setupRows[row].token;
+      setupRows[row].token = tok;
+      draw();
+    }));
+    $("#setupForm").addEventListener("submit", e => { e.preventDefault(); saveNames(); startGame(); });
+  };
+  const saveNames = () => s.querySelectorAll("input[data-row]").forEach(inp => { setupRows[+inp.dataset.row].name = inp.value; });
+  draw();
+}
+
+function startGame() {
+  const rows = setupRows.slice(0, setupCount);
+  state.players = rows.map((r, k) => {
+    const t = TOKENS.find(x => x.id === r.token);
+    const name = (r.name || "").trim() || t.defName;
+    return { idx: k, name, color: t.color, letter: t.letter, city: t.city, money: START_MONEY, pos: 0,
+             inExile: false, exileTries: 0, amnesty: [], bankrupt: false };
+  });
+  state.props = {};
+  SPACES.forEach((sp, i) => { if (isOwnable(i)) state.props[i] = { owner: null, level: 0, mortgaged: false }; });
+  state.decks.oracle = shuffle(ORACLE_CARDS.map((c, k) => k));
+  state.decks.gunst = shuffle(GUNST_CARDS.map((c, k) => k));
+  state.trivia = shuffle(TRIVIA.map((q, k) => k));
+  state.current = 0;
+  state.doubles = 0;
+  state.turnCount = 0;
+  state.phase = "roll";
+  $("#log").innerHTML = "";
+  $("#setup").hidden = true;
+  fitBoard();
+  renderTokens();
+  log(`Spillet begynder med ${state.players.length} spillere. Alle starter med ${fmt(START_MONEY)}.`);
+  log(`Det er <b>${esc(gen(cur().name))}</b> tur.`, cur());
+  updateUI();
+}
+
+const RULES_HTML = `<ul>
+  <li>Alle starter med <b>${fmt(START_MONEY)}</b> og modtager <b>${fmt(PASS_START)}</b>, hver gang de passerer <b>Start ved Agoraen</b>.</li>
+  <li>Lander du på en ledig ejendom eller havn, kan du <b>købe</b> den. Lander du på en andens ejendom, betales lejen automatisk.</li>
+  <li>Ejer du hele farvegruppen, fordobles grundlejen, og du kan bygge <b>altre</b> jævnt fordelt. Det femte byggeri er et <b>tempel</b>.</li>
+  <li>Havne giver mere i leje, jo flere du ejer: 25, 50, 100 eller 200 ₯.</li>
+  <li><b>Oraklets Spådomme</b> og <b>Gudernes Gunst</b> giver historiske begivenheder med gevinst eller udgift.</li>
+  <li>Ved <b>Ostrakisme</b>, tre gange to ens eller visse kort sendes du i <b>eksil</b>. Kom ud ved at betale ${fmt(EXILE_FEE)}, bruge et amnestikort eller slå to ens inden for tre forsøg.</li>
+  <li>På <b>Den Olympiske Våbenhvile</b> får du en visdomsprøve. Rigtigt svar giver ${fmt(QUIZ_REWARD)}.</li>
+  <li>Slår du to ens, må du kaste igen. Kan du ikke betale en gæld, kan du sælge bygninger og pantsætte. Ellers går du <b>fallit</b>.</li>
+  <li>Den sidste spiller, der ikke er gået fallit, vinder.</li>
+</ul>`;
+
+/* =====================================================================
+   OPSTART
+   ===================================================================== */
+function init() {
+  renderBoard();
+  $("#rollBtn").addEventListener("click", onRoll);
+  $("#endBtn").addEventListener("click", () => { if (state.phase === "end") endTurn(); });
+  $("#manageBtn").addEventListener("click", async () => {
+    if (!(state.phase === "roll" || state.phase === "end")) return;
+    const prev = state.phase;
+    state.phase = "busy";
+    updateUI();
+    await openManager(cur());
+    state.phase = prev;
+    updateUI();
+  });
+  $("#rulesBtn").addEventListener("click", () => {
+    if (!$("#modalOverlay").hidden) return;
+    showModal({ title: "Sådan spiller man", kicker: "Regler", body: RULES_HTML, buttons: [{ label: "Luk", value: 0, cls: "primary" }] });
+  });
+  $("#newGameBtn").addEventListener("click", async () => {
+    if (state.phase === "busy" || !$("#modalOverlay").hidden) return;
+    if (state.phase === "setup") return;
+    const v = await showModal({
+      title: "Start et nyt spil?", kicker: "Nyt spil",
+      body: "<p>Det nuværende spil afsluttes, og alle fremskridt går tabt.</p>",
+      buttons: [{ label: "Fortsæt spillet", value: 0 }, { label: "Nyt spil", value: 1, cls: "danger" }]
+    });
+    if (v === 1) showSetup();
+  });
+  document.addEventListener("keydown", e => {
+    if (state.phase === "setup" || !$("#modalOverlay").hidden) return;
+    if (e.target.closest && e.target.closest("input, textarea, button, [role=button]")) return;
+    if (e.key === " " || e.key === "Enter") {
+      if (state.phase === "roll") { e.preventDefault(); onRoll(); }
+      else if (state.phase === "end") { e.preventDefault(); endTurn(); }
+    }
+  });
+  window.addEventListener("resize", fitBoard);
+  if (window.ResizeObserver) new ResizeObserver(fitBoard).observe($("#boardWrap"));
+  fitBoard();
+  showSetup();
+}
+init();
+</script>
+</body>
+</html>
