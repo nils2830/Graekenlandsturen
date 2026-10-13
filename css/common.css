@@ -62,12 +62,16 @@ img{max-width:100%}
 /* En massiv kube: seks sider og tre indre kerneplader, der fylder hjørnerne ud. */
 .dice-pair{display:flex;gap:calc(var(--ds,64px)*.5);align-items:center;justify-content:center;--ds:64px}
 .die-wrap{width:var(--ds);height:var(--ds);perspective:calc(var(--ds)*9);position:relative}
-.die-cube{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 1.15s cubic-bezier(.3,.36,.25,1.04);will-change:transform}
-.die-cube.no-anim{transition:none}
+.die-cube{position:relative;width:100%;height:100%;transform-style:preserve-3d;will-change:transform}
 .die-cube>div{position:absolute;inset:0}
-.core{background:#d9d4c7;border-radius:4%}
-.cx{transform:rotateY(90deg)}
-.cy{transform:rotateX(90deg)}
+/* Indre kube med skarpe hjørner lige inden for de afrundede sider: fylder hjørnerne */
+.core{background:#d9d4c7;--ci:calc(var(--ds)*.465);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.core.f1{transform:translateZ(var(--ci))}
+.core.f6{transform:rotateY(180deg) translateZ(var(--ci))}
+.core.f3{transform:rotateY(90deg) translateZ(var(--ci))}
+.core.f4{transform:rotateY(-90deg) translateZ(var(--ci))}
+.core.f5{transform:rotateX(90deg) translateZ(var(--ci))}
+.core.f2{transform:rotateX(-90deg) translateZ(var(--ci))}
 .face{
   border-radius:12%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:14%;
   background:linear-gradient(145deg,#ffffff 0%,#f6f3ec 45%,#e9e4d8 100%);
@@ -86,11 +90,11 @@ img{max-width:100%}
 .die-shadow{position:absolute;left:12%;right:12%;bottom:-20%;height:16%;border-radius:50%;background:rgba(0,0,0,.32);filter:blur(5px);z-index:-1}
 .die-wrap.rolling{animation:bob .42s ease-in-out infinite alternate}
 .die-wrap.rolling .die-shadow{animation:bobShadow .42s ease-in-out infinite alternate}
-@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-22%)}}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-9%)}}
 @keyframes bobShadow{from{transform:scale(1);opacity:1}to{transform:scale(.7);opacity:.55}}
 .die-wrap.thrown{animation:thrown 1.15s cubic-bezier(.3,.7,.4,1) both}
 .die-wrap.thrown .die-shadow{animation:shadow 1.15s cubic-bezier(.3,.7,.4,1) both}
-@keyframes thrown{0%{transform:translateY(0) scale(1)}22%{transform:translateY(-60%) scale(1.1)}48%{transform:translateY(0) scale(1)}64%{transform:translateY(-16%)}80%{transform:translateY(0)}90%{transform:translateY(-4%)}100%{transform:translateY(0)}}
+@keyframes thrown{0%{transform:translateY(var(--from,0px)) scale(1)}22%{transform:translateY(-60%) scale(1.1)}48%{transform:translateY(0) scale(1)}64%{transform:translateY(-16%)}80%{transform:translateY(0)}90%{transform:translateY(-4%)}100%{transform:translateY(0)}}
 @keyframes shadow{0%{transform:scale(1);opacity:1}22%{transform:scale(.55);opacity:.4}48%{transform:scale(1);opacity:1}64%{transform:scale(.85)}100%{transform:scale(1);opacity:1}}
 
 /* ---------- Kort (ejendom, orakel, gunst) ---------- */
@@ -149,7 +153,8 @@ img{max-width:100%}
 .dist-chip{display:inline-flex;align-items:center;gap:.4em;font-weight:800;font-size:.88em;color:#0a3f7a;background:#e6f0fa;border-radius:99px;padding:.3em .8em .3em .5em;line-height:1.2}
 .dist-chip svg{width:1.1em;height:1.1em;flex:0 0 auto}
 button.dist-chip{border:0;cursor:pointer;box-shadow:inset 0 0 0 1.5px #b8d3ee}
-.map-box{position:relative;height:min(56vh,460px);border-radius:14px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.35);background:#cfe3f3}
+.dist-chip .chip-act{margin-left:.35em;padding-left:.55em;border-left:1.5px solid #b8d3ee;font-weight:700;opacity:.85}
+.map-box{position:relative;isolation:isolate;z-index:0;height:min(56vh,460px);border-radius:14px;overflow:hidden;box-shadow:0 10px 26px rgba(0,0,0,.35);background:#cfe3f3}
 .map-box .leaflet-container{height:100%;font-family:var(--f-body);background:#cfe3f3}
 .map-missing{padding:20px;color:var(--ink)}
 .mpin-wrap{background:none;border:0}

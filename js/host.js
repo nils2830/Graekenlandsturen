@@ -850,7 +850,7 @@ function spaceCardHTML(i, note, noteKind) {
   return `<div class="card">
     <div class="card-band" style="background:${bandBg};color:${bandFg}"><small>${esc(kicker)}</small><b>${esc(sp.name)}</b></div>
     <div class="spot-row">
-      <div class="card-img" style="flex:1 1 55%;height:auto;aspect-ratio:4/3;background-image:url(${imgSrc(sp.img)})"></div>
+      <div class="card-img" style="flex:1 1 55%;height:auto;aspect-ratio:4/3;background-image:url(${imgSrc(sp.img)})">${mapInsetHTML(i)}</div>
       <div class="card-body" style="flex:1 1 45%">
         <div class="card-text">${esc(sp.fact)}</div>
         ${sp.tip ? `<div class="card-tip"><b>Turisttip:</b> ${esc(sp.tip)}</div>` : ""}
@@ -865,10 +865,14 @@ const PIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7
 function mapPartHTML(i) {
   const geo = MapKit.geoOf(i);
   if (!geo) return "";
-  const near = MapKit.distKm(HOME.geo, geo) < 6;
   const chip = `<button type="button" class="dist-chip" data-maptoggle title="${H.showMap ? "Skjul kortet" : "Vis stedet på et kort"}">${PIN_SVG}<span>${esc(MapKit.distanceText(i))}</span><span class="chip-act">${H.showMap ? "Skjul kort" : "Vis kort"}</span></button>`;
-  if (!H.showMap) return `<div>${chip}</div>`;
-  return `<div class="spot-mapwrap">${chip}${near ? `<div class="spot-map" data-focus="${i}"></div>` : `<div class="spot-rmap">${MapKit.regionSVG(i)}</div>`}</div>`;
+  return `<div>${chip}</div>`;
+}
+function mapInsetHTML(i) {
+  const geo = MapKit.geoOf(i);
+  if (!geo || !H.showMap) return "";
+  const near = MapKit.distKm(HOME.geo, geo) < 6;
+  return `<div class="spot-inset">${near ? `<div class="spot-map" data-focus="${i}"></div>` : MapKit.regionSVG(i)}</div>`;
 }
 function cardHTML(deck, idx) {
   const card = (deck === "oracle" ? ORACLE_CARDS : GUNST_CARDS)[idx];
@@ -950,7 +954,7 @@ let lastSpotKey = "";
 function renderSpot() {
   const el = $("#spot");
   const s = state.spot;
-  if (!s) { el.hidden = true; el.innerHTML = ""; lastSpotKey = ""; return; }
+  if (!s) { if (H.spotMap) { H.spotMap.map.remove(); H.spotMap = null; } el.hidden = true; el.innerHTML = ""; lastSpotKey = ""; return; }
   let html = "";
   if (s.k === "space") html = spaceCardHTML(s.i, s.note, s.noteKind);
   else if (s.k === "card") html = cardHTML(s.deck, s.idx);
@@ -993,6 +997,7 @@ function openMapModal(focusIdx) {
       setTimeout(() => { m.refresh(); if (focusIdx !== undefined) m.focus(focusIdx); else m.overview(); }, 30);
       body.querySelector("#mmAll").addEventListener("click", () => m.overview());
       body.querySelector("#mmNaf").addEventListener("click", () => m.overview(true));
+      return () => m.map.remove();
     });
 }
 setInterval(() => { if (state.spot && state.spot.k === "quiz" && state.spot.phase === "ask") renderSpot(); }, 500);
@@ -1097,7 +1102,8 @@ function openModal(title, bodyHTML, buttons, mount) {
   return new Promise(resolve => {
     const m = $("#modal");
     m.innerHTML = `<div class="mbox" role="dialog" aria-modal="true"><div class="mhead">${title}</div><div class="mbody">${bodyHTML}</div><div class="mfoot"></div></div>`;
-    const close = v => { m.hidden = true; m.innerHTML = ""; resolve(v); };
+    let cleanup = null;
+    const close = v => { if (cleanup) { try { cleanup(); } catch (e) { /* ignorer */ } } m.hidden = true; m.innerHTML = ""; resolve(v); };
     buttons.forEach(b => {
       const el = document.createElement("button");
       el.type = "button"; el.className = "btn " + (b.cls || ""); el.textContent = b.label;
@@ -1105,7 +1111,7 @@ function openModal(title, bodyHTML, buttons, mount) {
       m.querySelector(".mfoot").appendChild(el);
     });
     m.hidden = false;
-    if (mount) mount(m.querySelector(".mbody"), close);
+    if (mount) cleanup = mount(m.querySelector(".mbody"), close) || null;
   });
 }
 

@@ -104,6 +104,8 @@ const MapKit = (() => {
     homeMarker.bindTooltip(`Lejligheden · ${HOME.name}`, { direction: "top", className: "mtip home", permanent: !still });
     const line = L.polyline([], { color: "#0d5eaf", weight: 3, dashArray: "6 8", opacity: 0.9 }).addTo(map);
     let current = null;
+    // Kanten skaleres efter kortets størrelse, så et lille kort ikke zoomer helt ud
+    const pad = px => { const z = map.getSize(); return [Math.min(px, Math.round(z.x / 6)), Math.min(px, Math.round(z.y / 6))]; };
 
     function setActive(key) {
       Object.entries(markers).forEach(([k, m]) => {
@@ -120,14 +122,14 @@ const MapKit = (() => {
       line.setLatLngs([HOME.geo, g]);
       const km = distKm(HOME.geo, g);
       if (km < 0.25) map.setView([(HOME.geo[0] + g[0]) / 2, (HOME.geo[1] + g[1]) / 2], 17);
-      else map.fitBounds(L.latLngBounds([HOME.geo, g]), { padding: [46, 46], maxZoom: 17 });
+      else map.fitBounds(L.latLngBounds([HOME.geo, g]), { padding: pad(46), maxZoom: 17 });
     }
     function overview(nafplio) {
       current = null;
       setActive(null);
       line.setLatLngs([]);
       const pts = nafplio ? PLACES.filter(p => distKm(HOME.geo, p.geo) < 6).map(p => p.geo) : PLACES.map(p => p.geo);
-      map.fitBounds(L.latLngBounds(pts.concat([HOME.geo])), { padding: [30, 30] });
+      map.fitBounds(L.latLngBounds(pts.concat([HOME.geo])), { padding: pad(30) });
     }
     overview();
     return { map, focus, overview, refresh: () => map.invalidateSize(), get current() { return current; } };

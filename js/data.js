@@ -126,11 +126,18 @@ SPACES.forEach((s, i) => {
 /* ---------------- Kort: koordinater (WGS84) ----------------
    Fundet via Wikipedia, Pleiades og OpenStreetMap og kontrolleret af to
    uafhængige opslag. Afstande vises i luftlinje fra lejligheden. */
-const HOME = { name: "Staikopoulou 46", geo: [0, 0] };
+const HOME = { name: "Staikopoulou 46", geo: [37.56550, 22.79795] }; // husnummeret er anslået ud fra nabonumre, ca. ±80 m
 const GEO = {
-  // Nafplio (udfyldes med kontrollerede koordinater)
-  arvanitia: null, karathona: null, havn: null, gamlebydel: null, syntagma: null,
-  spyridon: null, bourtzi: null, akronafplia: null, palamidi: null,
+  // Nafplio
+  arvanitia: [37.56309, 22.79915],
+  karathona: [37.54433, 22.82298],
+  havn: [37.56791, 22.79839],
+  gamlebydel: [37.56613, 22.79948],
+  syntagma: [37.56621, 22.79674],
+  spyridon: [37.56548, 22.79807],
+  bourtzi: [37.56972, 22.79028],
+  akronafplia: [37.56389, 22.79528],
+  palamidi: [37.56203, 22.80397],
   // Argolis og Korinth
   tiryns: [37.59944, 22.80000],
   mykene: [37.73081, 22.75648],

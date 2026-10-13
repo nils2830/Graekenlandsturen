@@ -386,7 +386,7 @@ function bindHandlers() {
     send({ t: "manage", act: b.dataset.manage, sp: +b.dataset.sp });
     b.disabled = true;
   }));
-  document.querySelectorAll("[data-mapfocus]").forEach(b => b.addEventListener("click", () => { mapSel = +b.dataset.mapfocus; tab = "map"; render(true); window.scrollTo(0, 0); }));
+  document.querySelectorAll("[data-mapfocus]").forEach(b => b.addEventListener("click", () => { mapSel = +b.dataset.mapfocus; lastFocused = undefined; tab = "map"; render(true); window.scrollTo(0, 0); }));
   const ma = $("[data-mapall]");
   if (ma) ma.addEventListener("click", () => { mapSel = null; lastFocused = null; if (pmap) pmap.overview(); render(true); });
   const mn = $("[data-mapnaf]");
