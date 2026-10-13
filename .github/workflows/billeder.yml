@@ -1,0 +1,25 @@
+name: Hent billeder
+on:
+  push:
+    branches: ['claude/**', 'main']
+    paths: ['img/manifest.json', 'tools/hent_billeder.py', '.github/workflows/billeder.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  hent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow
+      - run: python tools/hent_billeder.py
+      - name: Gem billederne i repoet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add img tools/billedlog.txt tools/oversigt.jpg
+          git diff --cached --quiet || git commit -m "Opdater billeder fra Wikimedia Commons"
+          git push
