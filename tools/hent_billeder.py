@@ -16,7 +16,7 @@ IMG = os.path.join(ROOT, "img")
 UA = "PolisBraetspil/1.0 (https://github.com/nils2830/Test; familiebraetspil)"
 COMMONS = "https://commons.wikimedia.org/w/api.php"
 ENWIKI = "https://en.wikipedia.org/w/api.php"
-BAD_WORDS = ("map", "logo", "collage", "plan", "diagram", "coat of arms", "seal", "signature", "kart")
+BAD_WORDS = ("map", "logo", "collage", "drawing", "sketch", "yale center", "plan", "diagram", "coat of arms", "seal", "signature", "kart")
 
 def get_json(url, params):
     params = dict(params, format="json", formatversion="2")
