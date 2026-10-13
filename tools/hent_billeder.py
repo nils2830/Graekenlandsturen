@@ -121,10 +121,19 @@ def main():
                 info, via = commons_info("File:" + entry["file"]), "file"
             if not info and entry.get("wiki"):
                 info, via = from_wiki(entry["wiki"], entry.get("svg", False)), "wiki:" + entry["wiki"]
-            if not info and entry.get("search"):
-                info, via = from_search(entry["search"]), "search:" + entry["search"]
+            searches = entry.get("search") or []
+            if isinstance(searches, str):
+                searches = [searches]
+            for q in searches:
+                if info:
+                    break
+                info, via = from_search(q), "search:" + q
             if not info:
                 log.append(f"{ident}: INTET BILLEDE FUNDET")
+                for stale in (target, os.path.join(IMG, "sm", ident + ".jpg")):
+                    if os.path.exists(stale):
+                        os.remove(stale)
+                credits.pop(ident, None)
                 continue
             big = save(get_bytes(info["thumb"]), ident)
             info.pop("thumb")

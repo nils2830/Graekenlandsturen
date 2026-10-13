@@ -14,11 +14,21 @@
  },
  {
   "id": "havn",
-  "search": "Nafplio harbour boats Bourtzi"
+  "search": [
+   "Nafplio port",
+   "Nafplion harbour",
+   "Nafplio waterfront",
+   "Nafplio panorama"
+  ]
  },
  {
   "id": "gamlebydel",
-  "search": "Nafplio street old town"
+  "search": [
+   "Nafplio alley",
+   "Nafplion street",
+   "Nafplio old city",
+   "Nafplio bougainvillea"
+  ]
  },
  {
   "id": "syntagma",
@@ -121,7 +131,12 @@
  },
  {
   "id": "akropolismuseet",
-  "search": "Acropolis Museum building exterior Athens -logo"
+  "search": [
+   "New Acropolis Museum",
+   "Acropolis Museum Tschumi",
+   "Acropolis Museum glass floor",
+   "Acropolis Museum Athens"
+  ]
  },
  {
   "id": "parthenon",
