@@ -173,22 +173,30 @@ function moneyChanged(from, to) {
   if (!el) return;
   const d = to - from;
   if (myMoney.raf) cancelAnimationFrame(myMoney.raf);
-  const start = myMoney.shown === null ? from : myMoney.shown, t0 = performance.now();
-  const dur = matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 750;
-  const step = t => {
-    const s = Math.min(1, (t - t0) / dur);
-    myMoney.shown = start + (to - start) * (1 - Math.pow(1 - s, 3));
-    el.textContent = fmt(myMoney.shown);
-    myMoney.raf = s < 1 ? requestAnimationFrame(step) : null;
-  };
-  myMoney.raf = requestAnimationFrame(step);
+  myMoney.raf = null;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { myMoney.shown = to; el.textContent = fmt(to); }
+  else {
+    const start = myMoney.shown === null ? from : myMoney.shown;
+    let t0 = null;
+    const step = t => {
+      if (t0 === null) t0 = t;
+      const s = Math.max(0, Math.min(1, (t - t0) / 750));
+      myMoney.shown = start + (to - start) * (1 - Math.pow(1 - s, 3));
+      el.textContent = fmt(myMoney.shown);
+      myMoney.raf = s < 1 ? requestAnimationFrame(step) : null;
+    };
+    myMoney.raf = requestAnimationFrame(step);
+  }
   top.classList.remove("gain", "loss"); void top.offsetWidth;
   top.classList.add(d > 0 ? "gain" : "loss");
-  setTimeout(() => top.classList.remove("gain", "loss"), 1300);
+  clearTimeout(myMoney.flashT);
+  myMoney.flashT = setTimeout(() => top.classList.remove("gain", "loss"), 1300);
+  const wrap = top.querySelector(".money-wrap");
   const chip = document.createElement("span");
   chip.className = "mdelta " + (d > 0 ? "plus" : "minus");
   chip.textContent = (d > 0 ? "+" : "−") + fmt(Math.abs(d));
-  top.querySelector(".money-wrap").appendChild(chip);
+  chip.style.top = `calc(100% + ${wrap.querySelectorAll(".mdelta").length * 1.7}em)`;
+  wrap.appendChild(chip);
   setTimeout(() => chip.remove(), 1700);
   buzz(d > 0 ? [18, 40, 18] : 60);
 }

@@ -524,6 +524,7 @@ async function bankrupt(p, creditor) {
   p.amnesty = [];
   toast(`${p.name} er gået fallit`, null, "minus");
   Sfx.play("bankrupt");
+  H.sfxMuteCoins = true;   // pengebevægelserne ved fallit skal ikke også klinge som mønter
   feed(`<b>${esc(p.name)}</b> er gået fallit${creditor ? " og overdrager alt til " + esc(creditor.name) : ""}.`, p);
   await showSpot({ k: "msg", img: "ostraka", band: "#151515", kicker: "Fallit", title: `${p.name} har mistet alt`,
     text: creditor ? `Alle ejendomme og resterende drachmer går til ${creditor.name}.` : "Alle ejendomme går tilbage til statskassen og kan købes igen." }, 4200);
@@ -1071,7 +1072,8 @@ setInterval(() => {
   if (!(state.spot && state.spot.k === "quiz" && state.spot.phase === "ask")) return;
   renderSpot();
   const left = Math.ceil((state.spot.deadline - Date.now()) / 1000);
-  if (left <= 5 && left > 0 && left !== lastTick) { lastTick = left; Sfx.play("tick"); }
+  const key = state.spot.id + ":" + left;
+  if (left <= 5 && left > 0 && key !== lastTick) { lastTick = key; Sfx.play("tick"); }
 }, 250);
 
 /* ---------------- Panelet ---------------- */
@@ -1165,11 +1167,14 @@ function renderPlayersBox() {
 function tweenMoney(pid, to) {
   const m = moneyFx[pid] || (moneyFx[pid] = { shown: to, to });
   const row = document.querySelector(`#playersBox [data-pid="${pid}"] .money`);
-  m.from = m.shown; m.to = to; m.t0 = performance.now();
   if (m.raf) cancelAnimationFrame(m.raf);
-  const dur = reduced() ? 1 : 750;
+  m.raf = null;
+  if (reduced()) { m.shown = m.to = to; if (row) row.textContent = fmt(to); return; }
+  m.from = m.shown; m.to = to; m.t0 = null;
+  const dur = 750;
   const step = t => {
-    const s = Math.min(1, (t - m.t0) / dur);
+    if (m.t0 === null) m.t0 = t;   // uret starter ved første billede
+    const s = Math.max(0, Math.min(1, (t - m.t0) / dur));
     m.shown = m.from + (m.to - m.from) * (1 - Math.pow(1 - s, 3));
     if (row) row.textContent = fmt(m.shown);
     m.raf = s < 1 ? requestAnimationFrame(step) : null;
@@ -1190,9 +1195,11 @@ function moneyEffects() {
     if (row) {
       row.classList.remove("gain", "loss"); void row.offsetWidth;
       row.classList.add(d > 0 ? "gain" : "loss");
-      setTimeout(() => row.classList.remove("gain", "loss"), 1300);
+      clearTimeout(row._flashT);
+      row._flashT = setTimeout(() => row.classList.remove("gain", "loss"), 1300);
       const wrap = row.querySelector(".money-wrap");
       const chip = document.createElement("span");
+      chip.style.top = `calc(50% - ${wrap.querySelectorAll(".mdelta").length * 1.75}em)`;
       chip.className = "mdelta " + (d > 0 ? "plus" : "minus");
       chip.textContent = (d > 0 ? "+" : "−") + fmt(Math.abs(d));
       wrap.appendChild(chip);
@@ -1205,7 +1212,13 @@ function moneyEffects() {
       f.className = "bdelta " + (d > 0 ? "plus" : "minus");
       f.textContent = (d > 0 ? "+" : "−") + fmt(Math.abs(d));
       // Flere beløb samme sted stables, så de ikke dækker hinanden
-      const x = parseFloat(tok.style.left) || 0, y = parseFloat(tok.style.top) || 0;
+      const key = spotFor(p).key;
+      const x = parseFloat(tok.style.left) || 0;
+      const ys = state.players.filter(q => !q.bankrupt && spotFor(q).key === key).map(q => {
+        const e = document.getElementById("tok-" + q.pid);
+        return e ? parseFloat(e.style.top) || 0 : 0;
+      });
+      const y = ys.length ? Math.min(...ys) : (parseFloat(tok.style.top) || 0);
       const near = [...document.querySelectorAll("#tokens .bdelta")].filter(o => Math.abs(+o.dataset.x - x) < 60 && Math.abs(+o.dataset.y - y) < 60).length;
       f.dataset.x = x; f.dataset.y = y;
       f.style.left = x + "px";
@@ -1214,9 +1227,11 @@ function moneyEffects() {
       setTimeout(() => f.remove(), 1800);
     }
   });
-  if (gains || losses) {
-    const hint = H.sfxHint;
-    H.sfxHint = null;
+  // Hint og dæmpning gælder kun den opdatering, de blev sat til
+  const hint = H.sfxHint, mute = H.sfxMuteCoins;
+  H.sfxHint = null;
+  H.sfxMuteCoins = false;
+  if ((gains || losses) && !mute) {
     if (hint) Sfx.play(hint);
     else {
       if (losses) Sfx.play("pay");

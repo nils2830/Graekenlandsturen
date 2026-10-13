@@ -41,7 +41,8 @@ body.host{height:100vh;overflow:hidden;background:radial-gradient(ellipse at 30%
 .top .own{left:0;right:0;top:0;height:.55em}
 .left .own{top:0;bottom:0;left:0;width:.55em}
 .right .own{top:0;bottom:0;right:0;width:.55em}
-.sp.mortgaged .sp-body{filter:grayscale(1);opacity:.45}
+.sp.mortgaged .sp-body > :not(.owner){filter:grayscale(1);opacity:.45}
+.sp.mortgaged .sp-price.owner{background:repeating-linear-gradient(135deg,rgba(255,255,255,.3) 0 .35em,transparent .35em .7em),var(--own)}
 .sp.mortgaged::after{
   content:"PANTSAT";position:absolute;left:50%;top:55%;transform:translate(-50%,-50%) rotate(-24deg);z-index:3;
   font-weight:700;font-size:.9em;letter-spacing:.1em;color:var(--bad);border:.15em solid var(--bad);padding:0 .3em;background:rgba(255,255,255,.85)
