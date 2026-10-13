@@ -23,7 +23,9 @@ const PIN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-7
 const dice = Dice.create($("#phoneDice"));
 const SHAPES = ["▲", "◆", "●", "■"];
 
-const coinHTML = p => `<span class="coin" style="--c:${p.color}"><span>${p.letter}</span></span>`;
+const photoCache = {};
+let avOpen = false;
+const coinHTML = (p, cls = "") => Avatars.html(p, cls, p && p.avatar && p.avatar.kind === "photo" ? photoCache[p.pid] : undefined);
 const buzz = pattern => { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* ikke understøttet */ } };
 const me = () => (V && V.you !== null && V.you !== undefined) ? V.players[V.you] : null;
 
@@ -37,7 +39,7 @@ function connect(c) {
     onOpen() { client.send({ t: "hello", cid }); },
     onData(m) {
       if (!m || typeof m !== "object") return;
-      if (m.t === "view") { V = m; onView(); }
+      if (m.t === "view") { if (m.photos) Object.assign(photoCache, m.photos); V = m; onView(); }
       else if (m.t === "error") showToast(m.msg, "minus");
       else if (m.t === "bye") setTimeout(() => client.reconnect(), 1500);
     }
@@ -102,7 +104,7 @@ function render(force) {
   $("#tabs [data-tab=game]").innerHTML = "Spil" + (myTurnBadge ? '<span class="badge"></span>' : "");
 
   const key = JSON.stringify([tab, code, connState === "no-host", V && [V.you, V.phase, V.prompt, V.spot, V.activity, V.canManage, V.round,
-    V.players.map(p => [p.money, p.online, p.taken, p.bankrupt, p.inExile, p.amnesty]), tab === "game" ? 0 : V.props, V.cur], quizAnswered, mapSel]);
+    V.players.map(p => [p.money, p.online, p.taken, p.bankrupt, p.inExile, p.amnesty, p.avatar]), tab === "game" ? 0 : V.props, V.cur], quizAnswered, mapSel, avOpen, Object.keys(photoCache).map(k => photoCache[k].length)]);
   if (!force && key === lastKey) return;
   lastKey = key;
 
@@ -157,11 +159,17 @@ function pickPlayerView() {
     <p class="muted" style="margin:0">Navnene er skrevet ind på computeren. Tryk på dit eget.</p></div>`];
 }
 
+function avatarPanel(p) {
+  return `<div class="panel stack" id="avPanel"><div class="label">Dit profilbillede</div>
+    <p class="muted" style="margin:0">Vælg et symbol, eller tag en selfie. Billedet bliver vist på brættet og hos de andre.</p>
+    ${Avatars.pickerHTML(p.color, p.avatar, { dark: true, camera: true, fallback: "spartan-helmet" })}</div>`;
+}
 function lobbyView() {
   const p = me();
-  return [`<div class="panel" style="text-align:center">${coinHTML(p).replace('class="coin"', 'class="coin" style="font-size:2.4rem;--c:' + p.color + '"')}
+  return [`<div class="panel" style="text-align:center">${coinHTML(p, "hero")}
       <h2 class="big" style="margin-top:10px">Du er ${esc(p.name)}</h2>
-      <p class="lead">${V.resume ? "Spillet fortsætter, så snart nogen trykker Fortsæt på skærmen." : "Venter på, at spillet bliver startet på skærmen."}</p></div>`,
+      <p class="lead">${V.resume ? "Spillet fortsætter, så snart nogen trykker Fortsæt på skærmen." : "Venter på, at spillet bliver startet på skærmen."}</p></div>
+      ${avatarPanel(p)}`,
     `<div class="panel stack"><div class="label">Med i spillet</div>${V.players.map(pl => `<div class="pl">${coinHTML(pl)}<div><b>${esc(pl.name)}<span class="dot ${pl.online ? "on" : ""}"></span></b><small>${pl.online ? "Klar" : "Venter på telefon"}</small></div><span></span></div>`).join("")}
       <button class="btn ghost" type="button" id="releaseBtn">Det er ikke mig</button></div>`];
 }
@@ -328,7 +336,10 @@ function playersView() {
       <div class="sq">${Rules.ownedBy(G, p.pid).map(i => `<i style="background:${groupOf(i).color}"></i>`).join("")}</div></div>
     <span class="m num">${fmt(p.money)}</span></div>`).join("");
   return [`<div class="panel"><div class="label">Stillingen</div><h2 class="big">${V.maxRounds ? `Runde ${V.round} af ${V.maxRounds}` : `Runde ${V.round}`}</h2></div>`,
-    `<div class="stack">${rows}<button class="btn ghost" type="button" id="releaseBtn">Skift spiller på denne telefon</button></div>`];
+    `<div class="stack">${rows}
+      <button class="btn ghost" type="button" id="avToggle">${avOpen ? "Luk profilbillede" : "Skift profilbillede"}</button>
+      ${avOpen ? avatarPanel(me()) : ""}
+      <button class="btn ghost" type="button" id="releaseBtn">Skift spiller på denne telefon</button></div>`];
 }
 
 function overView() {
@@ -361,6 +372,14 @@ function bindHandlers() {
     if (c.length >= 4) { connect(c); render(true); }
   });
   document.querySelectorAll("[data-claim]").forEach(b => b.addEventListener("click", () => { send({ t: "claim", pid: +b.dataset.claim }); keepAwake(); }));
+  const avp = $("#avPanel");
+  if (avp) Avatars.bindPicker(avp, av => {
+    send(Object.assign({ t: "avatar" }, av));
+    if (av.kind === "photo") showToast("Dit billede er sendt til brættet.", "plus");
+    avOpen = false;
+  });
+  const avt = $("#avToggle");
+  if (avt) avt.addEventListener("click", () => { avOpen = !avOpen; render(true); });
   const rel = $("#releaseBtn");
   if (rel) rel.addEventListener("click", () => send({ t: "release" }));
   const roll = $("#rollBtn");

@@ -215,3 +215,27 @@ body.host{height:100vh;overflow:hidden;background:radial-gradient(ellipse at 30%
 .spot-inset .leaflet-control-attribution{font-size:7px;line-height:1.2;padding:0 3px}
 .spot-inset .regionmap{width:100%;height:100%;border-radius:0}
 #spot .dist-chip{font-size:.8em}
+
+/* ---------- Profilbilleder i opsætningen ---------- */
+.prow-setup{grid-template-columns:auto minmax(0,1fr)}
+.av-big{position:relative;border:0;background:none;padding:0;cursor:pointer;border-radius:50%}
+.av-big .coin{font-size:2.3rem}
+.av-big .av-edit{position:absolute;left:50%;bottom:-.35em;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:.15em .55em;border-radius:99px;white-space:nowrap}
+.av-big:hover .coin{filter:brightness(1.08)}
+.av-panel{grid-column:1/-1;background:var(--chalk);border-radius:12px;padding:12px;box-shadow:inset 0 0 0 1px #dfe5ec}
+.av-panel-title{font-weight:800;font-size:.9rem;margin-bottom:10px;color:#36475c}
+.dot-c{width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid rgba(0,0,0,.35);margin-left:4px}
+
+/* ---------- Tydeligt ejerskab på felterne ---------- */
+.own{display:none}
+.sp.owned::before{content:"";position:absolute;inset:0;border:.34em solid var(--own);pointer-events:none;z-index:2}
+.sp-price.owner{
+  display:flex;align-items:center;gap:.3em;max-width:100%;min-width:0;padding:.12em .5em .12em .15em;font-size:.95em;border-radius:99px;
+  background:var(--own);color:#fff;font-weight:600;text-shadow:0 1px 1px rgba(0,0,0,.45);position:relative;z-index:3
+}
+.sp-price.owner span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.sp-price.owner .coin.mini{width:1.7em;height:1.7em;font-size:.85em;border-width:.1em;flex:0 0 auto}
+.sp-pic{position:relative}
+.own-badge{position:absolute;right:-.2em;bottom:-.2em;z-index:3}
+.own-badge .coin{width:2.5em;height:2.5em;font-size:1em;box-shadow:0 0 0 .14em #fff,0 .15em .4em rgba(0,0,0,.5)}
+.sp.owned .sp-pic{box-shadow:inset 0 0 0 .08em rgba(0,0,0,.15)}

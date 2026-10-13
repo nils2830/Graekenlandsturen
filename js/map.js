@@ -5,6 +5,10 @@
    ===================================================================== */
 "use strict";
 
+/* Nøgle til CARTO's kortfliser. Den står synligt i siden, som det er meningen
+   med browsernøgler; begræns den gerne til jeres domæne i CARTO's indstillinger. */
+const MAP_TILE_KEY = "cb1_4jbl_1_b4a3518d389823c4feabfc7d";
+
 const MapKit = (() => {
   const rad = d => d * Math.PI / 180;
 
@@ -87,10 +91,18 @@ const MapKit = (() => {
     const still = !!opts.static;
     const map = L.map(el, { zoomControl: !still, attributionControl: true, scrollWheelZoom: !!opts.wheel && !still, dragging: !still,
       touchZoom: !still, doubleClickZoom: !still, boxZoom: !still, keyboard: !still, zoomSnap: still ? 0.25 : 1 });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      subdomains: "abcd", maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-bidragydere &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+    // CARTO Voyager med jeres nøgle. Fejler mange fliser, skiftes der til OpenStreetMaps egne fliser.
+    const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-bidragydere';
+    let tiles = L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${MAP_TILE_KEY}`, {
+      maxZoom: 19,
+      attribution: OSM_ATTR + ' &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
     }).addTo(map);
+    let tileErrors = 0;
+    tiles.on("tileerror", () => {
+      if (++tileErrors !== 4) return;
+      map.removeLayer(tiles);
+      tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: OSM_ATTR }).addTo(map);
+    });
     const markers = {};
     PLACES.forEach(p => {
       const icon = L.divIcon({ className: "mpin-wrap", html: `<span class="mpin" style="--c:${p.color}"><i></i></span>`, iconSize: [30, 38], iconAnchor: [15, 36], tooltipAnchor: [0, -30] });

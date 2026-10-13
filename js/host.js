@@ -67,7 +67,7 @@ function startNet(code) {
   H.code = code;
   H.net = Net.createHost(code, {
     onStatus(s) { H.netStatus = s; renderLobby(); renderPanel(); },
-    onOpen(id) { H.conns.set(id, { cid: null, pid: null, last: Date.now() }); sendView(id); },
+    onOpen(id) { H.conns.set(id, { cid: null, pid: null, last: Date.now(), photoV: {} }); sendView(id); },
     onClose(id) {
       const c = H.conns.get(id);
       H.conns.delete(id);
@@ -118,10 +118,30 @@ function onMessage(id, m) {
     case "answer":
       if (c.pid !== null) handleAnswer(c.pid, m.id, m.v);
       return;
+    case "avatar":
+      if (c.pid !== null) setAvatar(c.pid, m);
+      return;
     case "manage":
       if (c.pid !== null) handleManage(c.pid, m.act, Number(m.sp));
       return;
   }
+}
+
+function setAvatar(pid, m) {
+  const p = state.players[pid];
+  if (!p) return false;
+  const v = ((p.avatar && p.avatar.v) || 0) + 1;
+  if (m.kind === "icon" && Avatars.isValidIcon(m.id)) p.avatar = { kind: "icon", id: m.id, v };
+  else if (m.kind === "photo" && Avatars.isValidPhoto(m.src)) p.avatar = { kind: "photo", src: m.src, v };
+  else return false;
+  // Husk valget til næste spil
+  if (setup.rows[pid]) {
+    setup.rows[pid].avatar = { kind: p.avatar.kind, id: p.avatar.id, src: p.avatar.src };
+    try { localStorage.setItem(SETUP_KEY, JSON.stringify(setup)); } catch (e) { /* fuld lagring: ignorer */ }
+  }
+  if (state.phase === "play") feed(`${esc(p.name)} har fået nyt profilbillede.`, p);
+  broadcast();
+  return true;
 }
 
 function claimFor(connId, pid) {
@@ -161,6 +181,7 @@ function buildView(pid) {
     cur: state.current,
     players: state.players.map(p => ({
       pid: p.pid, name: p.name, color: p.color, letter: p.letter, money: p.money, pos: p.pos,
+      avatar: p.avatar ? (p.avatar.kind === "photo" ? { kind: "photo", v: p.avatar.v || 0 } : { kind: "icon", id: p.avatar.id }) : null,
       inExile: p.inExile, bankrupt: p.bankrupt, amnesty: p.amnesty.length,
       online: isOnline(p.pid), taken: !!p.cid, worth: Rules.netWorth(state, p.pid)
     })),
@@ -180,7 +201,14 @@ function buildView(pid) {
 function sendView(id) {
   const c = H.conns.get(id);
   if (!c || !H.net) return;
-  H.net.send(id, buildView(c.pid));
+  const view = buildView(c.pid);
+  // Fotos sendes kun, når telefonen ikke allerede har den nyeste udgave
+  const photos = {};
+  state.players.forEach(p => {
+    if (p.avatar && p.avatar.kind === "photo" && c.photoV[p.pid] !== p.avatar.v) { photos[p.pid] = p.avatar.src; c.photoV[p.pid] = p.avatar.v; }
+  });
+  if (Object.keys(photos).length) view.photos = photos;
+  H.net.send(id, view);
 }
 let bcastQueued = false;
 function broadcast() {
@@ -673,7 +701,8 @@ async function runQuiz(lander) {
    ===================================================================== */
 const spaceEls = [];
 let centerDice = null, lastDiceSeq = 0, lastHostToast = 0;
-const coinHTML = (p, cls = "") => `<span class="coin ${cls}" style="--c:${p.color}"><span>${p.letter}</span></span>`;
+const coinHTML = (p, cls = "") => Avatars.html(p, cls);
+const avatarKey = p => p.avatar ? (p.avatar.kind === "photo" ? "p" + (p.avatar.v || 0) : "i" + p.avatar.id) : "";
 const TEMPLE_SVG = '<svg class="temple" viewBox="0 0 30 22" aria-hidden="true"><path d="M2 8 15 1l13 7z" fill="#d7263d" stroke="#151515" stroke-width="1.4" stroke-linejoin="round"/><rect x="3" y="8" width="24" height="2.5" fill="#fff" stroke="#151515"/><g fill="#fff" stroke="#151515"><rect x="5" y="11" width="3" height="7"/><rect x="11" y="11" width="3" height="7"/><rect x="16" y="11" width="3" height="7"/><rect x="22" y="11" width="3" height="7"/></g><rect x="2" y="18" width="26" height="3" fill="#fff" stroke="#151515"/></svg>';
 
 function gridPos(i) {
@@ -740,7 +769,28 @@ function updateBoard() {
     const ps = state.props[i];
     if (!ps) return;
     const el = spaceEls[i];
-    el.querySelector(".own").style.background = ps.owner === null ? "transparent" : state.players[ps.owner].color;
+    const owner = ps.owner === null ? null : state.players[ps.owner];
+    const priceEl = el.querySelector(".sp-price");
+    const ownKey = owner ? owner.pid + ":" + avatarKey(owner) + ":" + owner.name : "";
+    if (priceEl.dataset.own !== ownKey) {
+      priceEl.dataset.own = ownKey;
+      el.classList.toggle("owned", !!owner);
+      if (owner) {
+        el.style.setProperty("--own", owner.color);
+        priceEl.classList.add("owner");
+        priceEl.innerHTML = `${coinHTML(owner, "mini")}<span>${esc(owner.name)}</span>`;
+        const pic = el.querySelector(".sp-pic");
+        if (pic) pic.innerHTML = `<span class="own-badge">${coinHTML(owner)}</span>`;
+        el.title = `${sp.name} · ejes af ${owner.name}`;
+      } else {
+        el.style.removeProperty("--own");
+        priceEl.classList.remove("owner");
+        priceEl.textContent = fmt(sp.price);
+        const pic = el.querySelector(".sp-pic");
+        if (pic) pic.innerHTML = "";
+        el.title = sp.name;
+      }
+    }
     el.classList.toggle("mortgaged", !!ps.mortgaged);
     if (sp.type === "prop") {
       const band = el.querySelector(".band");
@@ -765,6 +815,7 @@ function renderTokens() {
     t.className = "tok";
     t.id = "tok-" + p.pid;
     t.innerHTML = coinHTML(p);
+    t.dataset.av = avatarKey(p);
     layer.appendChild(t);
   });
   positionTokens();
@@ -1083,6 +1134,10 @@ function showHostToast(text, kind) {
 function renderAll() {
   if (state.phase === "lobby") renderLobby();
   if ($("#game").hidden) return;
+  state.players.forEach(p => {
+    const t = document.getElementById("tok-" + p.pid);
+    if (t && t.dataset.av !== avatarKey(p)) { t.innerHTML = coinHTML(p); t.dataset.av = avatarKey(p); }
+  });
   updateBoard();
   positionTokens();
   renderPanel();
@@ -1164,6 +1219,9 @@ function openHostManager() {
    ===================================================================== */
 const setup = { count: 4, rounds: 12, rows: TOKENS.map(t => ({ name: t.defName, token: t.id })) };
 try { Object.assign(setup, JSON.parse(localStorage.getItem(SETUP_KEY) || "{}")); } catch (e) { /* standardværdier */ }
+const validAvatar = a => !!a && ((a.kind === "icon" && Avatars.isValidIcon(a.id)) || (a.kind === "photo" && Avatars.isValidPhoto(a.src)));
+setup.rows.forEach(r => { if (!validAvatar(r.avatar)) r.avatar = { kind: "icon", id: Avatars.DEFAULT_BY_TOKEN[r.token] || "spartan-helmet" }; });
+let openPicker = null;
 
 function showScreen(id) {
   ["setup", "lobby", "game"].forEach(s => { $("#" + s).hidden = s !== id; });
@@ -1193,10 +1251,14 @@ function showSetup() {
         <div><h3>Spillere og brikker</h3><div style="display:flex;flex-direction:column;gap:10px">
           ${setup.rows.slice(0, setup.count).map((r, k) => {
             const t = TOKENS.find(x => x.id === r.token);
-            return `<div class="prow-setup">${coinHTML(t)}<div>
-              <input id="pname${k}" data-row="${k}" maxlength="16" value="${esc(r.name)}" aria-label="Navn på spiller ${k + 1}">
-              <div class="tokpick">${TOKENS.map(o => `<button type="button" class="${o.id === r.token ? "sel" : ""}" data-row="${k}" data-token="${o.id}">${coinHTML(o)}${o.label}</button>`).join("")}</div>
-            </div></div>`;
+            return `<div class="prow-setup">
+              <button type="button" class="av-big" data-avopen="${k}" aria-expanded="${openPicker === k}" title="Skift profilbillede">${coinHTML({ color: t.color, letter: t.letter, avatar: r.avatar })}<span class="av-edit">${openPicker === k ? "Luk" : "Skift"}</span></button>
+              <div>
+                <input id="pname${k}" data-row="${k}" maxlength="16" value="${esc(r.name)}" aria-label="Navn på spiller ${k + 1}">
+                <div class="tokpick">${TOKENS.map(o => `<button type="button" class="${o.id === r.token ? "sel" : ""}" data-row="${k}" data-token="${o.id}"><i class="dot-c" style="background:${o.color}"></i>${o.label}</button>`).join("")}</div>
+              </div>
+              ${openPicker === k ? `<div class="av-panel" data-avpanel="${k}"><div class="av-panel-title">Vælg et symbol, eller brug et foto af spilleren</div>${Avatars.pickerHTML(t.color, r.avatar, { fallback: Avatars.DEFAULT_BY_TOKEN[r.token] })}</div>` : ""}
+            </div>`;
           }).join("")}
         </div></div>
         <div><h3>Spillets længde</h3><div class="seg">
@@ -1216,6 +1278,18 @@ function showSetup() {
       setup.rows[row].token = tok;
       draw();
     }));
+    s.querySelectorAll("[data-avopen]").forEach(b => b.addEventListener("click", () => {
+      saveNames();
+      const k = +b.dataset.avopen;
+      openPicker = openPicker === k ? null : k;
+      draw();
+    }));
+    s.querySelectorAll("[data-avpanel]").forEach(panel => Avatars.bindPicker(panel, av => {
+      saveNames();
+      setup.rows[+panel.dataset.avpanel].avatar = av;
+      openPicker = null;
+      draw();
+    }));
     const rb = $("#resumeBtn");
     if (rb) rb.addEventListener("click", () => resumeGame(saved));
     $("#setupForm").addEventListener("submit", e => { e.preventDefault(); saveNames(); createGame(); });
@@ -1228,8 +1302,10 @@ function createGame() {
   clearSave();
   state.players = setup.rows.slice(0, setup.count).map((r, k) => {
     const t = TOKENS.find(x => x.id === r.token);
+    const av = validAvatar(r.avatar) ? r.avatar : { kind: "icon", id: Avatars.DEFAULT_BY_TOKEN[t.id] };
     return { pid: k, name: (r.name || "").trim() || t.defName, color: t.color, letter: t.letter, money: ECON.startMoney, pos: 0,
-             inExile: false, exileTries: 0, amnesty: [], bankrupt: false, cid: null };
+             inExile: false, exileTries: 0, amnesty: [], bankrupt: false, cid: null,
+             avatar: av.kind === "photo" ? { kind: "photo", src: av.src, v: 1 } : { kind: "icon", id: av.id, v: 1 } };
   });
   state.props = {};
   SPACES.forEach(sp => { if (isOwnable(sp.i)) state.props[sp.i] = { owner: null, level: 0, mortgaged: false }; });

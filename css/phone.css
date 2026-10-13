@@ -93,3 +93,8 @@ h2.big{margin:2px 0 0;font-family:var(--f-board);font-weight:600;font-size:2rem;
 .mrow-p small{color:var(--mist);font-weight:700}
 .mrow-p.on{background:rgba(242,193,78,.16);box-shadow:inset 0 0 0 1.5px var(--sun)}
 .phone .card .dist-chip{align-self:flex-start}
+
+/* Profilbilleder på telefonen */
+.phone .av-grid{grid-template-columns:repeat(6,1fr)}
+.phone .pick .coin,.phone .pl .coin{font-size:1.25rem}
+#top .coin.photo,#top .coin.icon{font-size:1.25rem}

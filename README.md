@@ -30,11 +30,15 @@ python3 -m http.server 8000
 
 Åbn `http://localhost:8000/index.html?lokal=1` i én fane og `http://localhost:8000/telefon.html?lokal=1&cid=test1` i en anden. Med `?lokal=1` taler fanerne sammen inde i browseren, så man kan teste uden internet og uden telefoner.
 
+## Profilbilleder
+
+På opsætningsskærmen trykker man på spillerens runde billede for at vælge et af 24 græske symboler eller uploade et foto. Hver spiller kan også selv vælge et symbol eller tage en selfie fra sin telefon i lobbyen eller under fanen **Spillere**. Billedet vises på brikken, i panelet, på de felter man ejer og hos de andre spillere. Fotos bliver beskåret til et lille kvadrat og bliver kun på jeres egne enheder.
+
 ## Kort
 
 Hvert sted på brættet har en markering med afstanden fra lejligheden på Staikopoulou 46 i luftlinje. På telefonen kan man trykke **Vis på kort** eller åbne fanen **Kort** og se stedet på et gadekort sammen med lejligheden. På skærmen vises kortet først, når man trykker på afstanden på et kort; knappen **Kort** i panelet viser hele turen.
 
-Koordinaterne står i `js/data.js` under `GEO`. Gadekortet bruger OpenStreetMap og CARTO og kræver internet; oversigtskortet er tegnet ud fra Natural Earth og virker altid.
+Koordinaterne står i `js/data.js` under `GEO`. Gadekortet bruger CARTO med nøglen i `js/map.js` (`MAP_TILE_KEY`); den kan med fordel begrænses til jeres domæne i CARTO. Virker CARTO ikke, skifter kortet selv til OpenStreetMap. Gadekortet bruger OpenStreetMap og CARTO og kræver internet; oversigtskortet er tegnet ud fra Natural Earth og virker altid.
 
 ## Billeder
 
@@ -61,4 +65,5 @@ Billederne hentes af GitHub Action-workflowet `Hent billeder` ud fra `img/manife
 | `js/net.js` | Forbindelsen mellem skærm og telefoner (PeerJS) |
 | `js/dice.js` | 3D-terningerne |
 | `js/map.js`, `js/regionmap.js` | Kort, afstande og oversigtskortet |
+| `js/avatars.js`, `js/avatar-icons.js` | Profilbilleder og de 24 symboler fra Game Icons (CC BY 3.0) |
 | `vendor/` | PeerJS 1.5.4 og qrcode-generator 1.4.4 (MIT-licens), Leaflet 1.9.4 (BSD-2) |
