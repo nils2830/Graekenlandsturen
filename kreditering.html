@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Polis Billedkreditering</title>
+<link rel="stylesheet" href="css/common.css">
+<style>
+  body{padding:24px 16px 40px}
+  main{max-width:980px;margin:0 auto}
+  h1{font-family:var(--f-logo);letter-spacing:.12em;margin:0 0 6px}
+  p.lead{color:var(--mist);margin:0 0 20px;max-width:65ch}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .item{background:var(--chalk);color:var(--ink);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+  .item img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block;background:#cfd8e3}
+  .item div{padding:10px 12px;font-size:.85rem;display:flex;flex-direction:column;gap:3px;min-width:0}
+  .item b{font-size:.95rem;overflow-wrap:anywhere}
+  .item a{color:var(--aegean);overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main>
+  <h1>Billedkreditering</h1>
+  <p class="lead">Alle fotos og malerier i Polis er hentet fra Wikimedia Commons. Her står fotograf eller kunstner, licens og et link til den oprindelige fil for hvert billede.</p>
+  <div class="grid" id="grid"><p>Indlæser …</p></div>
+</main>
+<script src="js/data.js"></script>
+<script>
+"use strict";
+fetch("img/kreditering.json").then(r => r.json()).then(data => {
+  const ids = Object.keys(data).sort();
+  document.getElementById("grid").innerHTML = ids.map(id => {
+    const c = data[id];
+    return `<article class="item"><img src="${imgSrc(id, true)}" alt="" loading="lazy">
+      <div><b>${esc(c.file)}</b><span>Ophav: ${esc(c.artist)}</span>
+      <span>Licens: ${c.licenseUrl ? `<a href="${esc(c.licenseUrl)}" target="_blank" rel="noopener">${esc(c.license)}</a>` : esc(c.license)}</span>
+      <a href="${esc(c.page)}" target="_blank" rel="noopener">Se originalen på Wikimedia Commons</a></div></article>`;
+  }).join("");
+}).catch(() => {
+  document.getElementById("grid").innerHTML = "<p>Krediteringslisten kunne ikke indlæses.</p>";
+});
+</script>
+</body>
+</html>
