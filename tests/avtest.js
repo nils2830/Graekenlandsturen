@@ -1,0 +1,47 @@
+const { chromium } = require('playwright');
+const OUT = process.argv[2];
+(async () => {
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ reducedMotion: 'reduce' });
+  const errors = [];
+  const watch = (pg, n) => { pg.on('pageerror', e => errors.push(n + ': ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errors.push(n + ' console: ' + m.text()); }); };
+  const host = await ctx.newPage(); watch(host, 'host');
+  await host.setViewportSize({ width: 1600, height: 900 });
+  await host.goto('http://localhost:8765/index.html?lokal=1');
+  await host.evaluate(() => localStorage.clear());
+  await host.reload();
+  await host.click('[data-count="3"]');
+  await host.fill('#pname0', 'Søren'); await host.fill('#pname1', 'Materikles'); await host.fill('#pname2', 'Mamasita');
+  await host.click('[data-avopen="1"]');
+  await host.waitForTimeout(200);
+  await host.screenshot({ path: OUT + '/av1_picker.png' });
+  await host.click('[data-avpanel="1"] [data-av-icon="coffee-cup"]');
+  // foto til spiller 0
+  await host.click('[data-avopen="0"]');
+  await host.setInputFiles('[data-avpanel="0"] input[type=file]', `${__dirname}/../img/sm/sokrates.jpg`);
+  await host.waitForTimeout(500);
+  await host.screenshot({ path: OUT + '/av2_setup.png' });
+  await host.click('#setupForm button[type=submit]');
+  await host.waitForTimeout(300);
+  const code = (await host.textContent('.join-code')).trim();
+  const phone = await ctx.newPage(); watch(phone, 'phone');
+  await phone.setViewportSize({ width: 390, height: 844 });
+  await phone.goto(`http://localhost:8765/telefon.html?rum=${code}&lokal=1&cid=a2`);
+  await phone.waitForSelector('[data-claim]');
+  await phone.screenshot({ path: OUT + '/av3_pick.png' });
+  await phone.click('[data-claim="2"]'); await phone.waitForTimeout(400);
+  await phone.setInputFiles('#avPanel input[type=file]', `${__dirname}/../img/sm/bouboulina.jpg`);
+  await phone.waitForTimeout(800);
+  await phone.screenshot({ path: OUT + '/av4_lobby.png', fullPage: true });
+  await host.screenshot({ path: OUT + '/av5_lobby.png' });
+  await host.click('#lobbyStart'); await host.waitForTimeout(500);
+  // giv ejendomme for at se ejerskab
+  await host.evaluate(() => { [1, 3, 9, 11, 12, 18, 25, 31].forEach((i, k) => state.props[i].owner = k % 3); state.props[11].level = 2; state.props[31].level = 5; state.props[3].mortgaged = true; broadcast(); });
+  await host.waitForTimeout(600);
+  await host.screenshot({ path: OUT + '/av6_board.png' });
+  await phone.click('#tabs [data-tab="players"]'); await phone.waitForTimeout(300);
+  await phone.screenshot({ path: OUT + '/av7_players.png' });
+  const info = await host.evaluate(() => state.players.map(p => [p.name, p.avatar.kind, p.avatar.id || (p.avatar.src || '').length]));
+  console.log(JSON.stringify({ info, errors }));
+  await browser.close();
+})();

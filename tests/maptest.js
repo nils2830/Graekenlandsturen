@@ -1,0 +1,41 @@
+const { chromium } = require('playwright');
+const OUT = process.argv[2];
+(async () => {
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ reducedMotion: 'no-preference' });
+  const errors = [];
+  const watch = (pg, n) => { pg.on('pageerror', e => errors.push(n + ': ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/tile|cartocdn|fonts|ERR_|Failed to load resource/.test(m.text())) errors.push(n + ' console: ' + m.text()); }); };
+  const host = await ctx.newPage(); watch(host, 'host');
+  await host.setViewportSize({ width: 1600, height: 900 });
+  await host.goto('http://localhost:8765/index.html?lokal=1');
+  await host.click('[data-count="3"]'); await host.click('#setupForm button[type=submit]'); await host.waitForTimeout(300);
+  const code = (await host.textContent('.join-code')).trim();
+  const phone = await ctx.newPage(); watch(phone, 'phone');
+  await phone.setViewportSize({ width: 390, height: 844 });
+  await phone.goto(`http://localhost:8765/telefon.html?rum=${code}&lokal=1&cid=m0`);
+  await phone.waitForSelector('[data-claim]'); await phone.click('[data-claim="0"]');
+  await host.click('#lobbyStart'); await host.waitForTimeout(500);
+  // host: vis Palamidi (nær) og Parthenon (fjern) i spotlight, med kort slået til og fra
+  await host.evaluate(() => { setSpot({ k: 'space', i: 12 }); });
+  await host.waitForTimeout(500); await host.screenshot({ path: OUT + '/map_h1_chip.png' });
+  await host.click('#spot [data-maptoggle]'); await host.waitForTimeout(900);
+  await host.screenshot({ path: OUT + '/map_h2_near.png' });
+  await host.evaluate(() => { setSpot({ k: 'space', i: 31 }); });
+  await host.waitForTimeout(700); await host.screenshot({ path: OUT + '/map_h3_far.png' });
+  await host.evaluate(() => { setSpot(null); });
+  await host.click('#mapBtn'); await host.waitForTimeout(900); await host.screenshot({ path: OUT + '/map_h4_modal.png' });
+  await host.click('#modal .mfoot .btn');
+  // telefon: kast terninger og se dem trille, så kortfanen
+  await phone.waitForSelector('#rollBtn');
+  await phone.click('#rollBtn'); await phone.waitForTimeout(120); await phone.screenshot({ path: OUT + '/map_p0_roll.png' });
+  await host.waitForTimeout(3000);
+  await phone.waitForSelector('.card [data-mapfocus]', { timeout: 20000 });
+  await phone.click('.card [data-mapfocus]'); await phone.waitForTimeout(1200);
+  await phone.screenshot({ path: OUT + '/map_p1_tab.png' });
+  await phone.evaluate(() => window.scrollTo(0, 2000)); await phone.waitForTimeout(300);
+  await phone.screenshot({ path: OUT + '/map_p2_list.png' });
+  const info = await phone.evaluate(() => ({ tab, mapSel, mapH: document.getElementById('phoneMap').clientHeight, markers: document.querySelectorAll('#phoneMap .mpin').length, home: !!document.querySelector('#phoneMap .mhome') }));
+  console.log(JSON.stringify(info));
+  console.log(JSON.stringify({ errors, places: await phone.evaluate(() => MapKit.PLACES.length), home: await phone.evaluate(() => HOME) }));
+  await browser.close();
+})();
