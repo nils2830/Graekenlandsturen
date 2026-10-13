@@ -144,13 +144,13 @@
   "via": "search:Nafplio alley"
  },
  "havn": {
-  "artist": "Robert Smirke",
-  "file": "Robert Smirke - Nafplio, From the Port of the Argolic Gulf Near Argos - B1977.14.474 - Yale Center for British Art.jpg",
-  "key": "{\"id\": \"havn\", \"search\": [\"Nafplio port\", \"Nafplion harbour\", \"Nafplio waterfront\", \"Nafplio panorama\"]}",
-  "license": "CC0",
-  "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-  "page": "https://commons.wikimedia.org/wiki/File:Robert_Smirke_-_Nafplio,_From_the_Port_of_the_Argolic_Gulf_Near_Argos_-_B1977.14.474_-_Yale_Center_for_British_Art.jpg",
-  "via": "search:Nafplio port"
+  "artist": "Elgaard",
+  "file": "Windstar Nafplio.jpg",
+  "key": "{\"id\": \"havn\", \"search\": [\"Nafplio harbour\", \"Nafplion harbor\", \"Nafplio seafront\", \"Nafplio waterfront\", \"Nafplio panorama\"]}",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Windstar_Nafplio.jpg",
+  "via": "search:Nafplio harbour"
  },
  "hefaistos": {
   "artist": "Julian Lupyan",

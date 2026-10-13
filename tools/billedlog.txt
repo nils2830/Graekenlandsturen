@@ -1,8 +1,8 @@
 agora: uændret (Attica 06-13 Athens 22 View from Acropolis Hill - Museum of Ancient Agora.jpg)
 arvanitia: uændret (Arvanitia Beach.jpg)
 karathona: uændret (KARATHONAS BEACH-NAFPLIO GREECE - panoramio.jpg)
-havn: search:Nafplio port -> Robert Smirke - Nafplio, From the Port of the Argolic Gulf Near Argos - B1977.14.474 - Yale Center for British Art.jpg [CC0]
-gamlebydel: search:Nafplio alley -> Nafplion Ναύπλιο (3627677967).jpg [CC BY-SA 2.0]
+havn: search:Nafplio harbour -> Windstar Nafplio.jpg [CC BY-SA 4.0]
+gamlebydel: uændret (Nafplion Ναύπλιο (3627677967).jpg)
 syntagma: uændret (Αρχαιολογικό Μουσείο Ναυπλίου 7715.jpg)
 spyridon: uændret (Ναός Αγίου Σπυρίδωνα, Ναύπλιο 7934.jpg)
 kolokotronis: uændret (Kolokotronis01.jpg)
@@ -24,7 +24,7 @@ hefaistos: uændret (Temple of Hephaestus viewed from the Stoa of Attalos in Ath
 zeus: uændret (L'Olympieion (Athènes) (30776483926).jpg)
 stadion: uændret (Panathenaic Stadium - panoramio (1).jpg)
 metro: uændret (Station Métro Syntagma - Athènes (GRA1) - 2022-03-27 - 2.jpg)
-akropolismuseet: search:New Acropolis Museum -> New Acropolis Museum 5.jpg [CC BY-SA 3.0]
+akropolismuseet: uændret (New Acropolis Museum 5.jpg)
 parthenon: uændret (The Parthenon in Athens.jpg)
 pythia: uændret (Eugène Delacroix - Lycurgus Consulting the Pythia - Google Art Project.jpg)
 olympiere: uændret (Olympus National Park 30.jpg)
