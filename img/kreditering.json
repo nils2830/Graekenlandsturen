@@ -27,13 +27,13 @@
   "via": "wiki:Acronauplia"
  },
  "akropolismuseet": {
-  "artist": "Acropolis Museum",
-  "file": "Acropolis Museum Logo (2011).svg",
-  "key": "{\"id\": \"akropolismuseet\", \"search\": \"Acropolis Museum Athens\", \"wiki\": \"Acropolis Museum\"}",
-  "license": "Public domain",
-  "licenseUrl": "",
-  "page": "https://commons.wikimedia.org/wiki/File:Acropolis_Museum_Logo_(2011).svg",
-  "via": "wiki:Acropolis Museum"
+  "artist": "George E. Koronaios from Athens, Greece.",
+  "file": "The Byzantine church of Agios Eleftherios - Panagia Gorgoepikoos (Little Metropolis) in Athens, Greece (30).jpg",
+  "key": "{\"id\": \"akropolismuseet\", \"search\": \"Acropolis Museum building exterior Athens -logo\"}",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:The_Byzantine_church_of_Agios_Eleftherios_-_Panagia_Gorgoepikoos_(Little_Metropolis)_in_Athens,_Greece_(30).jpg",
+  "via": "search:Acropolis Museum building exterior Athens -logo"
  },
  "apollon": {
   "artist": "Berthold Werner",
@@ -72,13 +72,13 @@
   "via": "wiki:Laskarina Bouboulina"
  },
  "bourtzi": {
-  "artist": "Jebulon",
-  "file": "Bourtzi castle harbour Karystos Euboea Greece.jpg",
-  "key": "{\"id\": \"bourtzi\", \"search\": \"Bourtzi Nafplio castle\"}",
-  "license": "CC0",
-  "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-  "page": "https://commons.wikimedia.org/wiki/File:Bourtzi_castle_harbour_Karystos_Euboea_Greece.jpg",
-  "via": "search:Bourtzi Nafplio castle"
+  "artist": "Annatsach",
+  "file": "Bourtzi, Nafplion - 2.jpg",
+  "key": "{\"id\": \"bourtzi\", \"search\": \"Bourtzi Nafplion -Karystos -Euboea\"}",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Bourtzi,_Nafplion_-_2.jpg",
+  "via": "search:Bourtzi Nafplion -Karystos -Euboea"
  },
  "dionysosteater": {
   "artist": "dronepicr",
@@ -99,13 +99,13 @@
   "via": "wiki:Ancient Theatre of Epidaurus"
  },
  "evzoner": {
-  "artist": "Panos Aravantinos (1886-1930)",
-  "file": "Evzones, ca. 1900.jpg",
-  "key": "{\"id\": \"evzoner\", \"search\": \"Evzones changing of the guard Athens\", \"wiki\": \"Evzones\"}",
-  "license": "Public domain",
-  "licenseUrl": "",
-  "page": "https://commons.wikimedia.org/wiki/File:Evzones,_ca._1900.jpg",
-  "via": "wiki:Evzones"
+  "artist": "Jebulon",
+  "file": "Foot foot Evzones Athens.jpg",
+  "key": "{\"id\": \"evzoner\", \"search\": \"Evzones Tomb of the Unknown Soldier Athens\"}",
+  "license": "CC0",
+  "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "page": "https://commons.wikimedia.org/wiki/File:Foot_foot_Evzones_Athens.jpg",
+  "via": "search:Evzones Tomb of the Unknown Soldier Athens"
  },
  "feidippides": {
   "artist": "The original uploader was Hammer of the Gods27 at English Wikipedia.",
@@ -119,7 +119,7 @@
  "flag": {
   "artist": "Unknown authorUnknown author",
   "file": "Flag of Greece.svg",
-  "key": "{\"id\": \"flag\", \"wiki\": \"Flag of Greece\"}",
+  "key": "{\"id\": \"flag\", \"svg\": true, \"wiki\": \"Flag of Greece\"}",
   "license": "Public domain",
   "licenseUrl": "",
   "page": "https://commons.wikimedia.org/wiki/File:Flag_of_Greece.svg",
@@ -224,6 +224,15 @@
   "page": "https://commons.wikimedia.org/wiki/File:Kolokotronis01.jpg",
   "via": "wiki:Theodoros Kolokotronis"
  },
+ "kolokotronisstatue": {
+  "artist": "Badseed",
+  "file": "Kolokotronis statue Athens 1.jpg",
+  "key": "{\"id\": \"kolokotronisstatue\", \"search\": \"Kolokotronis statue\"}",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+  "page": "https://commons.wikimedia.org/wiki/File:Kolokotronis_statue_Athens_1.jpg",
+  "via": "search:Kolokotronis statue"
+ },
  "loukoumades": {
   "artist": "elif ayse",
   "file": "Sam'dan lokma tatlisi.jpg",
@@ -315,22 +324,22 @@
   "via": "wiki:Olive"
  },
  "olympiere": {
-  "artist": "Anonymous (Greece)Unknown author",
-  "file": "Greek - Procession of Twelve Gods and Goddesses - Walters 2340.jpg",
-  "key": "{\"id\": \"olympiere\", \"search\": \"Twelve Olympians painting\", \"wiki\": \"Twelve Olympians\"}",
-  "license": "Public domain",
-  "licenseUrl": "",
-  "page": "https://commons.wikimedia.org/wiki/File:Greek_-_Procession_of_Twelve_Gods_and_Goddesses_-_Walters_2340.jpg",
-  "via": "wiki:Twelve Olympians"
+  "artist": "kallerna",
+  "file": "Olympus National Park 30.jpg",
+  "key": "{\"id\": \"olympiere\", \"search\": \"Mount Olympus Greece\", \"wiki\": \"Mount Olympus\"}",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Olympus_National_Park_30.jpg",
+  "via": "wiki:Mount Olympus"
  },
  "ostraka": {
-  "artist": "Author Spruner von Merz, Karl, 1803-1892 Date 1855",
-  "file": "Graecia tempore Migrationis Doricae, circa 1000 an1803520899589105332011676031.jpg",
-  "key": "{\"id\": \"ostraka\", \"search\": \"Ostraka Themistocles\", \"wiki\": \"Ostracism\"}",
-  "license": "Public domain",
-  "licenseUrl": "",
-  "page": "https://commons.wikimedia.org/wiki/File:Graecia_tempore_Migrationis_Doricae,_circa_1000_an1803520899589105332011676031.jpg",
-  "via": "wiki:Ostracism"
+  "artist": "Zde",
+  "file": "Ostraka against Themistocles, 482 BC, Agora Museum Athens, 080635.jpg",
+  "key": "{\"id\": \"ostraka\", \"search\": \"Ostraka Themistocles Agora Museum\"}",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Ostraka_against_Themistocles,_482_BC,_Agora_Museum_Athens,_080635.jpg",
+  "via": "search:Ostraka Themistocles Agora Museum"
  },
  "otto": {
   "artist": "Friedrich Dürck",
@@ -468,13 +477,13 @@
   "via": "wiki:Panathenaic Stadium"
  },
  "syntagma": {
-  "artist": "FilipposTrains (compilation, sources to attribute see above; if any of the sources used in the Montage are removed from Wikimedia Commons, or better ones are found, please inform its creator so that they can update it. You can contact the creator by leaving a message here: [1])",
-  "file": "Nafplio photocollage.png",
-  "key": "{\"id\": \"syntagma\", \"search\": \"Syntagma Square Nafplio\"}",
+  "artist": "C messier",
+  "file": "Αρχαιολογικό Μουσείο Ναυπλίου 7715.jpg",
+  "key": "{\"id\": \"syntagma\", \"search\": \"Nafplio Syntagma square -collage -photocollage\"}",
   "license": "CC BY-SA 4.0",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Nafplio_photocollage.png",
-  "via": "search:Syntagma Square Nafplio"
+  "page": "https://commons.wikimedia.org/wiki/File:%CE%91%CF%81%CF%87%CE%B1%CE%B9%CE%BF%CE%BB%CE%BF%CE%B3%CE%B9%CE%BA%CF%8C_%CE%9C%CE%BF%CF%85%CF%83%CE%B5%CE%AF%CE%BF_%CE%9D%CE%B1%CF%85%CF%80%CE%BB%CE%AF%CE%BF%CF%85_7715.jpg",
+  "via": "search:Nafplio Syntagma square -collage -photocollage"
  },
  "taverna": {
   "artist": "Unai Guerra",
