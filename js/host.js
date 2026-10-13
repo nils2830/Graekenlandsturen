@@ -181,7 +181,7 @@ function buildView(pid) {
     cur: state.current,
     players: state.players.map(p => ({
       pid: p.pid, name: p.name, color: p.color, letter: p.letter, money: p.money, pos: p.pos,
-      avatar: p.avatar ? (p.avatar.kind === "photo" ? { kind: "photo", v: p.avatar.v || 0 } : { kind: "icon", id: p.avatar.id }) : null,
+      avatar: p.avatar ? (p.avatar.kind === "photo" ? { kind: "photo", v: p.avatar.v || 0 } : { kind: "icon", id: p.avatar.id, v: p.avatar.v || 0 }) : null,
       inExile: p.inExile, bankrupt: p.bankrupt, amnesty: p.amnesty.length,
       online: isOnline(p.pid), taken: !!p.cid, worth: Rules.netWorth(state, p.pid)
     })),
@@ -201,14 +201,15 @@ function buildView(pid) {
 function sendView(id) {
   const c = H.conns.get(id);
   if (!c || !H.net) return;
-  const view = buildView(c.pid);
-  // Fotos sendes kun, når telefonen ikke allerede har den nyeste udgave
-  const photos = {};
+  // Fotos sendes ét ad gangen som egne beskeder, og kun når telefonen mangler den nyeste udgave
   state.players.forEach(p => {
-    if (p.avatar && p.avatar.kind === "photo" && c.photoV[p.pid] !== p.avatar.v) { photos[p.pid] = p.avatar.src; c.photoV[p.pid] = p.avatar.v; }
+    if (p.avatar && p.avatar.kind === "photo" && c.photoV[p.pid] !== p.avatar.v) {
+      H.net.send(id, { t: "photo", pid: p.pid, v: p.avatar.v, src: p.avatar.src });
+      if (H.conns.get(id) === c) c.photoV[p.pid] = p.avatar.v;
+    }
   });
-  if (Object.keys(photos).length) view.photos = photos;
-  H.net.send(id, view);
+  if (H.conns.get(id) !== c) return;
+  H.net.send(id, buildView(c.pid));
 }
 let bcastQueued = false;
 function broadcast() {
@@ -1333,7 +1334,8 @@ function resumeGame(saved) {
 
 function joinUrl() {
   const u = new URL("telefon.html", location.href);
-  u.search = "?rum=" + H.code + (Net.local ? "&lokal=1" : "");
+  const q = new URLSearchParams(location.search);
+  u.search = "?rum=" + H.code + (Net.local ? "&lokal=1" : "") + (q.get("peerhost") ? `&peerhost=${encodeURIComponent(q.get("peerhost"))}&peerport=${encodeURIComponent(q.get("peerport") || "9000")}` : "");
   u.hash = "";
   return u.toString();
 }

@@ -7,8 +7,9 @@
 "use strict";
 
 const Avatars = (() => {
-  const SIZE = 192;
-  const MAX_LEN = 90000;
+  const SIZES = [192, 160, 128];
+  const TARGET_LEN = 12000;   // holder hver besked langt under PeerJS' grænse på 16 kB
+  const MAX_LEN = 16000;
   const ICON_BY_ID = Object.fromEntries(AVATAR_ICONS.map(a => [a.id, a]));
   const DEFAULT_BY_TOKEN = { sparta: "spartan-helmet", athen: "barn-owl", korinth: "pegasus", theben: "greek-sphinx" };
 
@@ -43,14 +44,23 @@ const Avatars = (() => {
         try {
           const s = Math.min(img.naturalWidth, img.naturalHeight);
           const sx = (img.naturalWidth - s) / 2, sy = (img.naturalHeight - s) / 2;
-          const c = document.createElement("canvas");
-          c.width = c.height = SIZE;
-          const ctx = c.getContext("2d");
-          ctx.imageSmoothingQuality = "high";
-          ctx.drawImage(img, sx, sy, s, s, 0, 0, SIZE, SIZE);
-          let q = 0.84, out = c.toDataURL("image/jpeg", q);
-          while (out.length > MAX_LEN && q > 0.4) { q -= 0.12; out = c.toDataURL("image/jpeg", q); }
+          let out = "";
+          for (const size of SIZES) {
+            const c = document.createElement("canvas");
+            c.width = c.height = size;
+            const ctx = c.getContext("2d");
+            ctx.fillStyle = "#ffffff";          // gennemsigtige PNG'er bliver hvide, ikke sorte
+            ctx.fillRect(0, 0, size, size);
+            ctx.imageSmoothingQuality = "high";
+            ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
+            for (let q = 0.82; q >= 0.4; q -= 0.1) {
+              out = c.toDataURL("image/jpeg", q);
+              if (out.length <= TARGET_LEN) break;
+            }
+            if (out.length <= TARGET_LEN) break;
+          }
           URL.revokeObjectURL(url);
+          if (!isValidPhoto(out)) { reject(new Error("Billedet er for stort eller kunne ikke bruges. Prøv et andet.")); return; }
           resolve(out);
         } catch (e) { URL.revokeObjectURL(url); reject(e); }
       };
@@ -74,14 +84,17 @@ const Avatars = (() => {
       </div>
     </div>`;
   }
-  function bindPicker(root, onPick) {
+  function bindPicker(root, onPick, onError) {
     root.querySelectorAll("[data-av-icon]").forEach(b => b.addEventListener("click", () => onPick({ kind: "icon", id: b.dataset.avIcon })));
     root.querySelectorAll("[data-av-file]").forEach(inp => inp.addEventListener("change", async () => {
       const f = inp.files && inp.files[0];
       if (!f) return;
-      const err = root.querySelector(".av-err");
       try { onPick({ kind: "photo", src: await fromFile(f) }); }
-      catch (e) { if (err) err.textContent = e.message || "Billedet kunne ikke bruges."; }
+      catch (e) {
+        const msg = (e && e.message) || "Billedet kunne ikke bruges.";
+        if (onError) onError(msg);
+        else { const err = root.querySelector(".av-err"); if (err && err.isConnected) err.textContent = msg; }
+      }
     }));
   }
 

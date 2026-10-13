@@ -11,6 +11,8 @@ const MAP_TILE_KEY = "cb1_4jbl_1_b4a3518d389823c4feabfc7d";
 
 const MapKit = (() => {
   const rad = d => d * Math.PI / 180;
+  const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-bidragydere';
+  let cartoDown = false;
 
   /* Afstand i luftlinje (haversine), i kilometer */
   function distKm(a, b) {
@@ -91,18 +93,26 @@ const MapKit = (() => {
     const still = !!opts.static;
     const map = L.map(el, { zoomControl: !still, attributionControl: true, scrollWheelZoom: !!opts.wheel && !still, dragging: !still,
       touchZoom: !still, doubleClickZoom: !still, boxZoom: !still, keyboard: !still, zoomSnap: still ? 0.25 : 1 });
-    // CARTO Voyager med jeres nøgle. Fejler mange fliser, skiftes der til OpenStreetMaps egne fliser.
-    const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-bidragydere';
-    let tiles = L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${MAP_TILE_KEY}`, {
+    // CARTO Voyager med jeres nøgle. Kan fliserne slet ikke hentes, skiftes der til OpenStreetMap
+    // (gælder også alle senere kort). En afvist nøgle giver derimod CARTO's vandmærke, som
+    // browseren ikke kan skelne fra et rigtigt kort; sæt da MAP_TILE_KEY til "" for at bruge OpenStreetMap.
+    const osmLayer = () => L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: OSM_ATTR });
+    let tiles = (cartoDown || !MAP_TILE_KEY) ? osmLayer() : L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png?key=${encodeURIComponent(MAP_TILE_KEY)}`, {
       maxZoom: 19,
       attribution: OSM_ATTR + ' &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
-    }).addTo(map);
-    let tileErrors = 0;
-    tiles.on("tileerror", () => {
-      if (++tileErrors !== 4) return;
-      map.removeLayer(tiles);
-      tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: OSM_ATTR }).addTo(map);
     });
+    tiles.addTo(map);
+    if (!cartoDown && MAP_TILE_KEY) {
+      let ok = 0, bad = 0;
+      tiles.on("tileload", () => { ok++; });
+      tiles.on("tileerror", () => {
+        if (cartoDown) return;
+        if (++bad < (ok ? 4 : 1)) return;   // intet hentet endnu: skift straks
+        cartoDown = true;
+        map.removeLayer(tiles);
+        tiles = osmLayer().addTo(map);
+      });
+    }
     const markers = {};
     PLACES.forEach(p => {
       const icon = L.divIcon({ className: "mpin-wrap", html: `<span class="mpin" style="--c:${p.color}"><i></i></span>`, iconSize: [30, 38], iconAnchor: [15, 36], tooltipAnchor: [0, -30] });

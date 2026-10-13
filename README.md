@@ -38,7 +38,7 @@ På opsætningsskærmen trykker man på spillerens runde billede for at vælge e
 
 Hvert sted på brættet har en markering med afstanden fra lejligheden på Staikopoulou 46 i luftlinje. På telefonen kan man trykke **Vis på kort** eller åbne fanen **Kort** og se stedet på et gadekort sammen med lejligheden. På skærmen vises kortet først, når man trykker på afstanden på et kort; knappen **Kort** i panelet viser hele turen.
 
-Koordinaterne står i `js/data.js` under `GEO`. Gadekortet bruger CARTO med nøglen i `js/map.js` (`MAP_TILE_KEY`); den kan med fordel begrænses til jeres domæne i CARTO. Virker CARTO ikke, skifter kortet selv til OpenStreetMap. Gadekortet bruger OpenStreetMap og CARTO og kræver internet; oversigtskortet er tegnet ud fra Natural Earth og virker altid.
+Koordinaterne står i `js/data.js` under `GEO`. Gadekortet bruger CARTO med nøglen i `js/map.js` (`MAP_TILE_KEY`); den kan med fordel begrænses til jeres domæne i CARTO. Kan CARTO slet ikke hentes, skifter kortet selv til OpenStreetMap. Viser kortet et vandmærke med "API key required", er nøglen afvist; sæt da `MAP_TILE_KEY` til `""`, så bruges OpenStreetMap direkte. Gadekortet bruger OpenStreetMap og CARTO og kræver internet; oversigtskortet er tegnet ud fra Natural Earth og virker altid.
 
 ## Billeder
 

@@ -8,6 +8,10 @@
 const Net = (() => {
   const params = new URLSearchParams(location.search);
   const local = params.has("lokal");
+  // Kun til test: ?peerhost=localhost&peerport=9000 bruger en lokal PeerJS-server
+  const PEER_OPTS = params.get("peerhost")
+    ? { host: params.get("peerhost"), port: +(params.get("peerport") || 9000), path: "/", secure: false, debug: 1 }
+    : { debug: 1 };
   const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
   function makeCode(n = 4) {
@@ -53,7 +57,7 @@ const Net = (() => {
     const start = () => {
       if (destroyed) return;
       h.onStatus("connecting");
-      peer = new Peer(NET_PREFIX + code, { debug: 1 });
+      peer = new Peer(NET_PREFIX + code, PEER_OPTS);
       peer.on("open", () => { tries = 0; h.onStatus("online"); });
       peer.on("connection", conn => {
         const id = conn.connectionId;
@@ -127,7 +131,8 @@ const Net = (() => {
     } else {
       const openConn = () => {
         if (conn) { try { conn.close(); } catch (err) { /* allerede lukket */ } }
-        conn = peer.connect(NET_PREFIX + code, { reliable: true, serialization: "json" });
+        // "binary" (BinaryPack) deler beskeder over 16 kB op; "json" ville afvise dem
+        conn = peer.connect(NET_PREFIX + code, { reliable: true, serialization: "binary" });
         const thisConn = conn;
         conn.on("open", () => { if (conn === thisConn) setAlive(); });
         conn.on("data", d => { if (conn === thisConn) { lastMsg = Date.now(); h.onData(d); } });
@@ -137,7 +142,7 @@ const Net = (() => {
       connect = () => {
         h.onStatus("connecting");
         if (!peer || peer.destroyed) {
-          peer = new Peer({ debug: 1 });
+          peer = new Peer(PEER_OPTS);
           peer.on("open", openConn);
           peer.on("disconnected", () => { setTimeout(() => { if (peer && !peer.destroyed && peer.disconnected) { try { peer.reconnect(); } catch (err) { /* nyt forsøg */ } } }, 1000); });
           peer.on("error", err => {

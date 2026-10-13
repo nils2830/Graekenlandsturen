@@ -25,6 +25,7 @@ const SHAPES = ["▲", "◆", "●", "■"];
 
 const photoCache = {};
 let avOpen = false;
+let pendingAv = null;   // profilbillede sendt, men endnu ikke bekræftet af brættet
 const coinHTML = (p, cls = "") => Avatars.html(p, cls, p && p.avatar && p.avatar.kind === "photo" ? photoCache[p.pid] : undefined);
 const buzz = pattern => { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* ikke understøttet */ } };
 const me = () => (V && V.you !== null && V.you !== undefined) ? V.players[V.you] : null;
@@ -36,10 +37,14 @@ function connect(c) {
   if (Net.cleanCode(params.get("rum") || "") !== c) history.replaceState(null, "", `?rum=${c}${Net.local ? "&lokal=1" : ""}`);
   client = Net.createClient(c, {
     onStatus(s) { connState = s; renderConn(); if (!V) render(true); },
-    onOpen() { client.send({ t: "hello", cid }); },
+    onOpen() {
+      client.send({ t: "hello", cid });
+      if (pendingAv) client.send(pendingAv.msg);
+    },
     onData(m) {
       if (!m || typeof m !== "object") return;
-      if (m.t === "view") { if (m.photos) Object.assign(photoCache, m.photos); V = m; onView(); }
+      if (m.t === "photo") { if (Avatars.isValidPhoto(m.src)) { photoCache[m.pid] = m.src; if (V) render(true); } }
+      else if (m.t === "view") { V = m; onView(); }
       else if (m.t === "error") showToast(m.msg, "minus");
       else if (m.t === "bye") setTimeout(() => client.reconnect(), 1500);
     }
@@ -64,6 +69,12 @@ function renderConn() {
 /* ---------------- Når en ny visning kommer fra brættet ---------------- */
 function onView() {
   const you = V.you;
+  // Bekræft et nyt profilbillede, når brættet har modtaget det
+  const mine = me();
+  if (pendingAv && mine && mine.avatar && (mine.avatar.v || 0) > pendingAv.baseV) {
+    if (pendingAv.kind === "photo") showToast("Dit billede er nu på brættet.", "plus");
+    pendingAv = null;
+  }
   // Beskeder
   const maxSeq = V.toasts.reduce((m, t) => Math.max(m, t.seq), 0);
   if (lastToastSeq === null) lastToastSeq = maxSeq;
@@ -374,10 +385,12 @@ function bindHandlers() {
   document.querySelectorAll("[data-claim]").forEach(b => b.addEventListener("click", () => { send({ t: "claim", pid: +b.dataset.claim }); keepAwake(); }));
   const avp = $("#avPanel");
   if (avp) Avatars.bindPicker(avp, av => {
-    send(Object.assign({ t: "avatar" }, av));
-    if (av.kind === "photo") showToast("Dit billede er sendt til brættet.", "plus");
+    const mine = me();
+    pendingAv = { msg: Object.assign({ t: "avatar" }, av), baseV: (mine && mine.avatar && mine.avatar.v) || 0, kind: av.kind };
+    send(pendingAv.msg);
+    if (av.kind === "photo") showToast("Sender billedet …");
     avOpen = false;
-  });
+  }, msg => showToast(msg, "minus"));
   const avt = $("#avToggle");
   if (avt) avt.addEventListener("click", () => { avOpen = !avOpen; render(true); });
   const rel = $("#releaseBtn");

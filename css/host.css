@@ -48,7 +48,8 @@ body.host{height:100vh;overflow:hidden;background:radial-gradient(ellipse at 30%
 }
 .altar{width:.95em;height:.95em;background:#fff;border:.13em solid var(--ink);border-radius:.15em}
 .temple{width:2.4em;height:1.7em;display:block}
-.sp.hl{animation:hlpulse 1s ease-in-out 3}
+/* Landings-markering ligger i samme lag som ejerrammen, så den også ses på ejede felter */
+.sp.hl::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;animation:hlpulse 1s ease-in-out 3}
 @keyframes hlpulse{50%{box-shadow:inset 0 0 0 .35em var(--sun)}}
 
 /* Hjørner: foto i fuld størrelse med et etiketbånd */
@@ -229,6 +230,9 @@ body.host{height:100vh;overflow:hidden;background:radial-gradient(ellipse at 30%
 /* ---------- Tydeligt ejerskab på felterne ---------- */
 .own{display:none}
 .sp.owned::before{content:"";position:absolute;inset:0;border:.34em solid var(--own);pointer-events:none;z-index:2}
+.sp.owned.left .band{padding-right:.34em}
+.sp.owned.right .band{padding-left:.34em}
+.temple{max-width:100%}
 .sp-price.owner{
   display:flex;align-items:center;gap:.3em;max-width:100%;min-width:0;padding:.12em .5em .12em .15em;font-size:.95em;border-radius:99px;
   background:var(--own);color:#fff;font-weight:600;text-shadow:0 1px 1px rgba(0,0,0,.45);position:relative;z-index:3
