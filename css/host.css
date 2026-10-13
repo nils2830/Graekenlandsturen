@@ -229,17 +229,54 @@ body.host{height:100vh;overflow:hidden;background:radial-gradient(ellipse at 30%
 
 /* ---------- Tydeligt ejerskab på felterne ---------- */
 .own{display:none}
-.sp.owned::before{content:"";position:absolute;inset:0;border:.34em solid var(--own);pointer-events:none;z-index:2}
-.sp.owned.left .band{padding-right:.34em}
-.sp.owned.right .band{padding-left:.34em}
 .temple{max-width:100%}
+
+
+/* ---------- Ejerskab: et farvet ejerbånd nederst på feltet ----------
+   Feltet får en svag tone i ejerens farve, og prisen erstattes af et bånd
+   i ejerens farve med profilbillede og navn. Tydeligt, men roligt. */
+.sp.owned{background:linear-gradient(color-mix(in srgb,var(--own) 9%,var(--chalk)),color-mix(in srgb,var(--own) 16%,var(--chalk)))}
+.sp.owned .sp-body{padding-bottom:0}
 .sp-price.owner{
-  display:flex;align-items:center;gap:.3em;max-width:100%;min-width:0;padding:.12em .5em .12em .15em;font-size:.95em;border-radius:99px;
-  background:var(--own);color:#fff;font-weight:600;text-shadow:0 1px 1px rgba(0,0,0,.45);position:relative;z-index:3
+  align-self:stretch;margin:0 -.3em;display:flex;align-items:center;justify-content:center;gap:.35em;min-width:0;
+  padding:.28em .4em .3em;background:var(--own);color:#fff;font-weight:600;letter-spacing:.02em;
+  text-shadow:0 1px 1px rgba(0,0,0,.4);box-shadow:inset 0 .12em 0 rgba(255,255,255,.25)
 }
 .sp-price.owner span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.sp-price.owner .coin.mini{width:1.7em;height:1.7em;font-size:.85em;border-width:.1em;flex:0 0 auto}
-.sp-pic{position:relative}
-.own-badge{position:absolute;right:-.2em;bottom:-.2em;z-index:3}
-.own-badge .coin{width:2.5em;height:2.5em;font-size:1em;box-shadow:0 0 0 .14em #fff,0 .15em .4em rgba(0,0,0,.5)}
-.sp.owned .sp-pic{box-shadow:inset 0 0 0 .08em rgba(0,0,0,.15)}
+.sp-price.owner .coin.mini{width:1.75em;height:1.75em;font-size:.82em;border-width:.12em;flex:0 0 auto;box-shadow:0 0 0 .08em rgba(255,255,255,.7)}
+
+/* ---------- Bygninger: altre og tempel som små brikker på farvebåndet ----------
+   Hvid brik med mørkt fyrfad = alter; guldbrik med tempel = tempel. Kan ses på alle gruppefarver. */
+.band{gap:.16em}
+.bld{
+  flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:1.85em;height:1.85em;border-radius:.38em;
+  background:linear-gradient(#ffffff,#ece8de);box-shadow:0 .1em 0 rgba(0,0,0,.4),inset 0 0 0 .07em rgba(0,0,0,.28)
+}
+.bld svg{flex:0 0 auto;width:80%;height:80%;fill:#1d1d1d}
+.bld.temple{width:2.7em;height:2.05em;background:linear-gradient(#ffe08a,var(--sun))}
+.bld.temple svg{width:84%;height:84%}
+.left .bld,.right .bld{width:1.6em;height:1.6em}
+.left .bld.temple,.right .bld.temple{width:1.95em;height:1.75em}
+.bld.new{animation:bldIn .55s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes bldIn{0%{transform:scale(0) translateY(.4em);opacity:0}100%{transform:none;opacity:1}}
+
+/* ---------- Penge: tal der tæller, et blink og et svævende beløb ---------- */
+.money-wrap{position:relative}
+.prow{transition:background-color .4s}
+.prow.gain{background:rgba(37,163,90,.22)}
+.prow.loss{background:rgba(215,38,61,.22)}
+.prow.gain .money{color:#7ff0a9}
+.prow.loss .money{color:#ff9aa7}
+.mdelta{position:absolute;right:calc(100% + 10px);top:50%;font-family:var(--f-board);font-weight:700;font-size:1rem;white-space:nowrap;pointer-events:none;padding:.08em .55em;border-radius:99px;color:#fff;animation:mfloat 1.6s ease-out forwards}
+.mdelta.plus{background:var(--good)}
+.mdelta.minus{background:var(--bad)}
+@keyframes mfloat{0%{transform:translate(.6em,-50%) scale(.7);opacity:0}15%{transform:translate(0,-50%) scale(1.05);opacity:1}30%{transform:translate(0,-50%) scale(1)}75%{opacity:1}100%{transform:translate(0,-160%);opacity:0}}
+.bdelta{
+  position:absolute;transform:translate(-50%,-150%);z-index:9;pointer-events:none;white-space:nowrap;
+  font-family:var(--f-board);font-weight:700;font-size:1.5em;padding:.1em .45em;border-radius:99px;color:#fff;
+  box-shadow:0 .2em .5em rgba(0,0,0,.35);animation:bfloat 1.8s ease-out forwards
+}
+.bdelta.plus{background:var(--good)}
+.bdelta.minus{background:var(--bad)}
+@keyframes bfloat{0%{transform:translate(-50%,-90%) scale(.6);opacity:0}15%{transform:translate(-50%,-150%) scale(1.08);opacity:1}30%{transform:translate(-50%,-150%) scale(1)}75%{opacity:1}100%{transform:translate(-50%,-260%);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mdelta,.bdelta,.bld.new{animation:none}.bdelta{transform:translate(-50%,-150%)}}

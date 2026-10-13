@@ -34,6 +34,10 @@ python3 -m http.server 8000
 
 På opsætningsskærmen trykker man på spillerens runde billede for at vælge et af 24 græske symboler eller uploade et foto. Hver spiller kan også selv vælge et symbol eller tage en selfie fra sin telefon i lobbyen eller under fanen **Spillere**. Billedet vises på brikken, i panelet, på de felter man ejer og hos de andre spillere. Fotos bliver beskåret til et lille kvadrat og bliver kun på jeres egne enheder.
 
+## Lyd
+
+Den store skærm har lyde til terninger, hop, penge ind og ud, køb, byggeri, kort, visdomsprøven, eksil og sejr. De laves direkte i browseren uden lydfiler. Knappen **Lyd** i panelet slår dem til og fra; lyden starter først, når nogen har klikket på siden, fordi browsere kræver det.
+
 ## Kort
 
 Hvert sted på brættet har en markering med afstanden fra lejligheden på Staikopoulou 46 i luftlinje. På telefonen kan man trykke **Vis på kort** eller åbne fanen **Kort** og se stedet på et gadekort sammen med lejligheden. På skærmen vises kortet først, når man trykker på afstanden på et kort; knappen **Kort** i panelet viser hele turen.
@@ -64,6 +68,7 @@ Billederne hentes af GitHub Action-workflowet `Hent billeder` ud fra `img/manife
 | `js/rules.js` | Regler for leje, byggeri og pantsætning |
 | `js/net.js` | Forbindelsen mellem skærm og telefoner (PeerJS) |
 | `js/dice.js` | 3D-terningerne |
+| `js/sound.js` | Lydene (Web Audio) |
 | `js/map.js`, `js/regionmap.js` | Kort, afstande og oversigtskortet |
 | `js/avatars.js`, `js/avatar-icons.js` | Profilbilleder og de 24 symboler fra Game Icons (CC BY 3.0) |
 | `vendor/` | PeerJS 1.5.4 og qrcode-generator 1.4.4 (MIT-licens), Leaflet 1.9.4 (BSD-2) |

@@ -11,7 +11,7 @@ body.phone{min-height:100vh;min-height:100dvh;background:linear-gradient(180deg,
 #top .who{min-width:0}
 #top .who b{display:block;font-weight:800;font-size:1.05rem;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #top .who small{color:var(--mist);font-size:.78rem}
-#top .money{margin-left:auto;font-family:var(--f-board);font-weight:600;font-size:1.7rem;line-height:1}
+#top .money{font-family:var(--f-board);font-weight:600;font-size:1.7rem;line-height:1}
 #top .logo{font-family:var(--f-logo);font-weight:900;letter-spacing:.16em;font-size:1.3rem}
 #connbar{display:none;margin:10px 16px 0;padding:10px 12px;border-radius:12px;background:#3b2a07;color:#ffe4a3;font-weight:700;font-size:.9rem;align-items:center;gap:10px}
 #connbar.show{display:flex}
@@ -98,3 +98,19 @@ h2.big{margin:2px 0 0;font-family:var(--f-board);font-weight:600;font-size:2rem;
 .phone .av-grid{grid-template-columns:repeat(6,1fr)}
 .phone .pick .coin,.phone .pl .coin{font-size:1.25rem}
 #top .coin.photo,#top .coin.icon{font-size:1.25rem}
+
+/* Penge på telefonen */
+#top{transition:background-color .4s}
+#top.gain{background:rgba(25,110,62,.95)}
+#top.loss{background:rgba(140,20,36,.95)}
+#top .money-wrap{margin-left:auto;position:relative}
+#top .tav{display:inline-flex}
+.mdelta{position:absolute;right:0;top:100%;font-family:var(--f-board);font-weight:700;font-size:1.15rem;white-space:nowrap;pointer-events:none;padding:.1em .5em;border-radius:99px;color:#fff;animation:pfloat 1.6s ease-out forwards}
+.mdelta.plus{background:var(--good)}
+.mdelta.minus{background:var(--bad)}
+@keyframes pfloat{0%{transform:translateY(-.6em) scale(.7);opacity:0}15%{transform:translateY(.2em) scale(1.05);opacity:1}30%{transform:translateY(.2em) scale(1)}75%{opacity:1}100%{transform:translateY(1.2em);opacity:0}}
+@media (prefers-reduced-motion:reduce){.mdelta{animation:none}}
+/* Bygninger i ejendomslisten */
+.pbld{display:inline-flex;gap:2px;vertical-align:-3px;margin-right:6px}
+.pbld svg{width:17px;height:17px;fill:#f2c14e;stroke:#151515;stroke-width:34px;paint-order:stroke}
+.pbld .pb-temple{width:22px;height:22px}

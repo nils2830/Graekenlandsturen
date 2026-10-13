@@ -26,6 +26,7 @@ const SHAPES = ["▲", "◆", "●", "■"];
 const photoCache = {};
 let avOpen = false;
 let pendingAv = null;   // profilbillede sendt, men endnu ikke bekræftet af brættet
+const bldSVG = kind => `<svg class="pb-${kind}" viewBox="0 0 512 512" aria-hidden="true">${BUILD_ICONS[kind]}</svg>`;
 const coinHTML = (p, cls = "") => Avatars.html(p, cls, p && p.avatar && p.avatar.kind === "photo" ? photoCache[p.pid] : undefined);
 const buzz = pattern => { try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* ikke understøttet */ } };
 const me = () => (V && V.you !== null && V.you !== undefined) ? V.players[V.you] : null;
@@ -67,8 +68,16 @@ function renderConn() {
 }
 
 /* ---------------- Når en ny visning kommer fra brættet ---------------- */
+let lastMyMoney = null, lastMyPid = null;
 function onView() {
   const you = V.you;
+  const mineNow = me();
+  if (mineNow && lastMyPid === mineNow.pid && lastMyMoney !== null && lastMyMoney !== mineNow.money) {
+    const from = lastMyMoney;
+    setTimeout(() => moneyChanged(from, mineNow.money), 0);
+  }
+  lastMyMoney = mineNow ? mineNow.money : null;
+  lastMyPid = mineNow ? mineNow.pid : null;
   // Bekræft et nyt profilbillede, når brættet har modtaget det
   const mine = me();
   if (pendingAv && mine && mine.avatar && (mine.avatar.v || 0) > pendingAv.baseV) {
@@ -140,11 +149,48 @@ function render(force) {
   bindHandlers();
 }
 
+const myMoney = { shown: null, raf: null };
 function renderTop() {
   const p = me();
-  if (!p) { $("#top").innerHTML = '<span class="logo">ΠΟΛΙΣ</span>'; return; }
+  const top = $("#top");
+  if (!p) { top.dataset.pid = ""; top.innerHTML = '<span class="logo">ΠΟΛΙΣ</span>'; myMoney.shown = null; return; }
   const round = V.maxRounds ? `Runde ${V.round} af ${V.maxRounds}` : `Runde ${V.round}`;
-  $("#top").innerHTML = `${coinHTML(p)}<div class="who"><b>${esc(p.name)}</b><small>${round}${p.inExile ? " · i eksil" : ""}</small></div><div class="money num">${fmt(p.money)}</div>`;
+  const avKey = JSON.stringify(p.avatar) + (photoCache[p.pid] || "").length;
+  if (top.dataset.pid !== String(p.pid)) {
+    top.dataset.pid = p.pid;
+    top.innerHTML = `<span class="tav"></span><div class="who"><b></b><small></small></div><div class="money-wrap"><div class="money num"></div></div>`;
+    myMoney.shown = p.money;
+    top.querySelector(".money").textContent = fmt(p.money);
+  }
+  const tav = top.querySelector(".tav");
+  if (tav.dataset.av !== avKey) { tav.innerHTML = coinHTML(p); tav.dataset.av = avKey; }
+  top.querySelector(".who b").textContent = p.name;
+  top.querySelector(".who small").textContent = round + (p.inExile ? " · i eksil" : "");
+}
+// Pengene tæller op eller ned, blinker og viser beløbet kort
+function moneyChanged(from, to) {
+  const top = $("#top"), el = top.querySelector(".money");
+  if (!el) return;
+  const d = to - from;
+  if (myMoney.raf) cancelAnimationFrame(myMoney.raf);
+  const start = myMoney.shown === null ? from : myMoney.shown, t0 = performance.now();
+  const dur = matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 750;
+  const step = t => {
+    const s = Math.min(1, (t - t0) / dur);
+    myMoney.shown = start + (to - start) * (1 - Math.pow(1 - s, 3));
+    el.textContent = fmt(myMoney.shown);
+    myMoney.raf = s < 1 ? requestAnimationFrame(step) : null;
+  };
+  myMoney.raf = requestAnimationFrame(step);
+  top.classList.remove("gain", "loss"); void top.offsetWidth;
+  top.classList.add(d > 0 ? "gain" : "loss");
+  setTimeout(() => top.classList.remove("gain", "loss"), 1300);
+  const chip = document.createElement("span");
+  chip.className = "mdelta " + (d > 0 ? "plus" : "minus");
+  chip.textContent = (d > 0 ? "+" : "−") + fmt(Math.abs(d));
+  top.querySelector(".money-wrap").appendChild(chip);
+  setTimeout(() => chip.remove(), 1700);
+  buzz(d > 0 ? [18, 40, 18] : 60);
 }
 
 function heroHTML(sub) {
@@ -319,7 +365,7 @@ function propsView() {
     <p class="muted" style="margin:6px 0 0">${V.canManage ? (debt ? `Skaf penge til gælden: sælg bygninger eller pantsæt.` : "Du kan bygge op til 2 altre på alle dine ejendomme. Ejer du hele farvegruppen, kan du bygge op til et tempel.") : "Du kan bygge og pantsætte, når det er din tur."}</p></div>`;
   const list = mine.map(i => {
     const sp = SPACES[i], ps = G.props[i];
-    const lvl = sp.type === "prop" ? Rules.levelLabel(ps.level) : "Rejserute";
+    const lvl = sp.type === "prop" ? (ps.level ? `<span class="pbld">${ps.level === 5 ? bldSVG("temple") : bldSVG("altar").repeat(ps.level)}</span>` : "") + Rules.levelLabel(ps.level) : "Rejserute";
     let acts = "";
     if (V.canManage) {
       if (sp.type === "prop" && !debt) {

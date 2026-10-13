@@ -282,6 +282,7 @@ function handleManage(pid, act, i) {
   const cost = sp.type === "prop" ? Rules.buildCost(i) : 0;
   if (act === "build") {
     if (debt || !Rules.canBuild(state, pid, i)) return false;
+    H.sfxHint = "build";
     p.money -= cost; ps.level++;
     feed(`${esc(p.name)} bygger ${ps.level === 5 ? "et tempel" : "et alter"} på ${esc(sp.name)}.`, p);
   } else if (act === "sell") {
@@ -333,6 +334,7 @@ function advance() {
   state.doubles = 0;
   if (state.maxRounds && state.round > state.maxRounds) { state.round = state.maxRounds; endGame("rounds"); return; }
   feed(`Det er <b>${esc(gen(cur().name))}</b> tur.`, cur());
+  Sfx.play("turn");
 }
 
 async function playTurn(p) {
@@ -407,6 +409,7 @@ async function sendToExile(p, why) {
   p.exileTries = 0;
   state.doubles = 0;
   toast(`${p.name} er sendt i eksil`, null, "minus");
+  Sfx.play("exile");
   feed(`${esc(p.name)} sendes i eksil: ${why}.`, p);
   positionTokens();
   await sleep(400);
@@ -454,6 +457,7 @@ async function handleOwnable(p, i) {
     });
     state.spot = null;
     if (v === "buy" && p.money >= sp.price) {
+      H.sfxHint = "buy";
       p.money -= sp.price;
       ps.owner = p.pid;
       toast(`${p.name} købte ${sp.name}`, null, "");
@@ -519,6 +523,7 @@ async function bankrupt(p, creditor) {
   p.amnesty.forEach(c => state.decks[c.deck].push(c.idx));
   p.amnesty = [];
   toast(`${p.name} er gået fallit`, null, "minus");
+  Sfx.play("bankrupt");
   feed(`<b>${esc(p.name)}</b> er gået fallit${creditor ? " og overdrager alt til " + esc(creditor.name) : ""}.`, p);
   await showSpot({ k: "msg", img: "ostraka", band: "#151515", kicker: "Fallit", title: `${p.name} har mistet alt`,
     text: creditor ? `Alle ejendomme og resterende drachmer går til ${creditor.name}.` : "Alle ejendomme går tilbage til statskassen og kan købes igen." }, 4200);
@@ -538,6 +543,7 @@ function endGame(reason) {
   const w = state.players[ranking[0].pid];
   state.current = w.pid;
   feed(`<b>${esc(w.name)}</b> vinder spillet!`, w);
+  Sfx.play("victory");
   clearSave();
   broadcast();
 }
@@ -598,6 +604,7 @@ async function drawCard(p, deck) {
   const card = list[idx];
   if (card.effect.type !== "amnesty") state.decks[deck].push(idx);
   state.spot = { k: "card", deck, idx };
+  Sfx.play("card");
   await ask(p.pid, { kind: "card", title: `${p.name} trak ${DECK_INFO[deck].name}: ${card.title}`, options: [{ v: "ok", label: "Videre", style: "primary" }] });
   state.spot = null;
   feed(`${esc(p.name)} trak ${esc(DECK_INFO[deck].name)}: ${esc(card.label)}.`, p);
@@ -665,6 +672,7 @@ async function runQuiz(lander) {
   state.spot = { k: "quiz", id: state.quiz.id, qi, opts, phase: "ask", deadline, answered: 0, total: pids.length, lander: lander.pid };
   feed(`${esc(lander.name)} holder frappé-pause: alle dyster i en visdomsprøve.`, lander);
   broadcast();
+  Sfx.play("quiz");
   await new Promise(resolve => {
     const quiz = state.quiz;
     let finished = false;
@@ -688,6 +696,8 @@ async function runQuiz(lander) {
     }
   });
   quiz.phase = "reveal";
+  H.sfxHint = winners.length ? "correct" : null;
+  if (!winners.length) Sfx.play("wrong");
   state.spot = Object.assign({}, state.spot, { phase: "reveal", correct, results, winners });
   feed(winners.length ? `Rigtigt svar: ${esc(q.a)}. ${winners.map(w => esc(state.players[w.pid].name)).join(", ")} vinder drachmer.` : `Rigtigt svar: ${esc(q.a)}. Ingen svarede rigtigt.`, lander);
   broadcast();
@@ -780,25 +790,28 @@ function updateBoard() {
         el.style.setProperty("--own", owner.color);
         priceEl.classList.add("owner");
         priceEl.innerHTML = `${coinHTML(owner, "mini")}<span>${esc(owner.name)}</span>`;
-        const pic = el.querySelector(".sp-pic");
-        if (pic) pic.innerHTML = `<span class="own-badge">${coinHTML(owner)}</span>`;
         el.title = `${sp.name} · ejes af ${owner.name}`;
       } else {
         el.style.removeProperty("--own");
         priceEl.classList.remove("owner");
         priceEl.textContent = fmt(sp.price);
-        const pic = el.querySelector(".sp-pic");
-        if (pic) pic.innerHTML = "";
         el.title = sp.name;
       }
     }
     el.classList.toggle("mortgaged", !!ps.mortgaged);
     if (sp.type === "prop") {
       const band = el.querySelector(".band");
-      const html = ps.level === 5 ? TEMPLE_SVG : '<span class="altar"></span>'.repeat(ps.level);
-      if (band.dataset.lv !== String(ps.level)) { band.innerHTML = html; band.dataset.lv = ps.level; }
+      if (band.dataset.lv !== String(ps.level)) {
+        const grew = ps.level > (+band.dataset.lv || 0);
+        band.innerHTML = ps.level === 5 ? buildingHTML("temple", true) : Array.from({ length: ps.level }, (_, k) => buildingHTML("altar", grew && k === ps.level - 1)).join("");
+        band.dataset.lv = ps.level;
+      }
     }
   });
+}
+
+function buildingHTML(kind, isNew) {
+  return `<span class="bld ${kind}${isNew ? " new" : ""}" title="${kind === "temple" ? "Tempel" : "Alter"}"><svg viewBox="0 0 512 512" aria-hidden="true">${BUILD_ICONS[kind]}</svg></span>`;
 }
 
 function highlightSpace(i) {
@@ -858,6 +871,7 @@ function hopToken(p) {
   positionTokens();
   const t = document.getElementById("tok-" + p.pid);
   if (t && !reduced()) { t.classList.remove("hop"); void t.offsetWidth; t.classList.add("hop"); }
+  Sfx.play("hop");
 }
 
 function fitBoard() {
@@ -1052,7 +1066,13 @@ function openMapModal(focusIdx) {
       return () => m.map.remove();
     });
 }
-setInterval(() => { if (state.spot && state.spot.k === "quiz" && state.spot.phase === "ask") renderSpot(); }, 500);
+let lastTick = null;
+setInterval(() => {
+  if (!(state.spot && state.spot.k === "quiz" && state.spot.phase === "ask")) return;
+  renderSpot();
+  const left = Math.ceil((state.spot.deadline - Date.now()) / 1000);
+  if (left <= 5 && left > 0 && left !== lastTick) { lastTick = left; Sfx.play("tick"); }
+}, 250);
 
 /* ---------------- Panelet ---------------- */
 function renderPanel() {
@@ -1108,18 +1128,101 @@ function renderPanel() {
   $("#manageBtn").hidden = !(pr && canManageNow(pr.pid) && hostControls(pr.pid) && Rules.ownedBy(state, pr.pid).length);
   $("#controlBtn").textContent = "Styr fra skærmen: " + (H.forceControl ? "til" : "fra");
 
-  $("#playersBox").innerHTML = state.players.map(pl => {
-    const owned = Rules.ownedBy(state, pl.pid);
-    const meta = pl.bankrupt ? "Fallit" : [`Formue ${fmt(Rules.netWorth(state, pl.pid))}`, pl.inExile ? "i eksil" : "", pl.amnesty.length ? `${pl.amnesty.length} amnestikort` : ""].filter(Boolean).join(" · ");
-    return `<div class="prow ${pl.pid === state.current && state.phase === "play" ? "cur" : ""} ${pl.bankrupt ? "out" : ""}">
-      ${coinHTML(pl)}
-      <div style="min-width:0"><div class="nm">${esc(pl.name)} <span class="dot ${isOnline(pl.pid) ? "on" : ""}" title="${isOnline(pl.pid) ? "Telefon tilsluttet" : "Ingen telefon"}"></span></div>
-        <div class="meta">${esc(meta)}</div>
-        <div class="ownsq">${owned.map(i => `<i style="background:${groupOf(i).color};${state.props[i].mortgaged ? "opacity:.35" : ""}" title="${esc(SPACES[i].name)}"></i>`).join("")}</div></div>
-      <div class="money num">${fmt(pl.money)}</div>
-    </div>`;
-  }).join("");
+  renderPlayersBox();
   $("#feed").innerHTML = state.feed.slice(-6).reverse().map(f => `<div style="${f.color ? "border-left-color:" + f.color : ""}">${f.html}</div>`).join("");
+}
+
+/* ---------------- Spillerrækker og penge ---------------- */
+const moneyFx = {};      // pid -> { shown, from, to, t0, raf }
+let lastMoney = {};
+function renderPlayersBox() {
+  const box = $("#playersBox");
+  if (box.children.length !== state.players.length) box.innerHTML = "";
+  state.players.forEach(pl => {
+    let row = box.querySelector(`[data-pid="${pl.pid}"]`);
+    if (!row) {
+      row = document.createElement("div");
+      row.dataset.pid = pl.pid;
+      row.innerHTML = `<span class="pav"></span><div style="min-width:0"><div class="nm"><span class="pname"></span> <span class="dot"></span></div>
+        <div class="meta"></div><div class="ownsq"></div></div><div class="money-wrap"><div class="money num"></div></div>`;
+      box.appendChild(row);
+      const m = moneyFx[pl.pid] || (moneyFx[pl.pid] = { shown: pl.money, to: pl.money });
+      row.querySelector(".money").textContent = fmt(m.shown);
+    }
+    const flash = ["gain", "loss"].filter(c => row.classList.contains(c));
+    row.className = ["prow", pl.pid === state.current && state.phase === "play" ? "cur" : "", pl.bankrupt ? "out" : "", ...flash].filter(Boolean).join(" ");
+    const pav = row.querySelector(".pav");
+    if (pav.dataset.av !== avatarKey(pl) + pl.color) { pav.innerHTML = coinHTML(pl); pav.dataset.av = avatarKey(pl) + pl.color; }
+    row.querySelector(".pname").textContent = pl.name;
+    const dot = row.querySelector(".dot");
+    dot.className = "dot" + (isOnline(pl.pid) ? " on" : "");
+    dot.title = isOnline(pl.pid) ? "Telefon tilsluttet" : "Ingen telefon";
+    row.querySelector(".meta").textContent = pl.bankrupt ? "Fallit" : [`Formue ${fmt(Rules.netWorth(state, pl.pid))}`, pl.inExile ? "i eksil" : "", pl.amnesty.length ? `${pl.amnesty.length} amnestikort` : ""].filter(Boolean).join(" · ");
+    row.querySelector(".ownsq").innerHTML = Rules.ownedBy(state, pl.pid).map(i => `<i style="background:${groupOf(i).color};${state.props[i].mortgaged ? "opacity:.35" : ""}" title="${esc(SPACES[i].name)}"></i>`).join("");
+  });
+}
+// Tal der tæller op eller ned i stedet for at hoppe
+function tweenMoney(pid, to) {
+  const m = moneyFx[pid] || (moneyFx[pid] = { shown: to, to });
+  const row = document.querySelector(`#playersBox [data-pid="${pid}"] .money`);
+  m.from = m.shown; m.to = to; m.t0 = performance.now();
+  if (m.raf) cancelAnimationFrame(m.raf);
+  const dur = reduced() ? 1 : 750;
+  const step = t => {
+    const s = Math.min(1, (t - m.t0) / dur);
+    m.shown = m.from + (m.to - m.from) * (1 - Math.pow(1 - s, 3));
+    if (row) row.textContent = fmt(m.shown);
+    m.raf = s < 1 ? requestAnimationFrame(step) : null;
+  };
+  m.raf = requestAnimationFrame(step);
+}
+function moneyEffects() {
+  let gains = 0, losses = 0;
+  state.players.forEach(p => {
+    const before = lastMoney[p.pid];
+    lastMoney[p.pid] = p.money;
+    if (before === undefined) { moneyFx[p.pid] = { shown: p.money, to: p.money }; return; }
+    const d = p.money - before;
+    if (!d) return;
+    if (d > 0) gains++; else losses++;
+    tweenMoney(p.pid, p.money);
+    const row = document.querySelector(`#playersBox [data-pid="${p.pid}"]`);
+    if (row) {
+      row.classList.remove("gain", "loss"); void row.offsetWidth;
+      row.classList.add(d > 0 ? "gain" : "loss");
+      setTimeout(() => row.classList.remove("gain", "loss"), 1300);
+      const wrap = row.querySelector(".money-wrap");
+      const chip = document.createElement("span");
+      chip.className = "mdelta " + (d > 0 ? "plus" : "minus");
+      chip.textContent = (d > 0 ? "+" : "−") + fmt(Math.abs(d));
+      wrap.appendChild(chip);
+      setTimeout(() => chip.remove(), 1700);
+    }
+    // Et lille tal, der stiger op fra brikken på brættet
+    const tok = document.getElementById("tok-" + p.pid);
+    if (tok && !p.bankrupt) {
+      const f = document.createElement("div");
+      f.className = "bdelta " + (d > 0 ? "plus" : "minus");
+      f.textContent = (d > 0 ? "+" : "−") + fmt(Math.abs(d));
+      // Flere beløb samme sted stables, så de ikke dækker hinanden
+      const x = parseFloat(tok.style.left) || 0, y = parseFloat(tok.style.top) || 0;
+      const near = [...document.querySelectorAll("#tokens .bdelta")].filter(o => Math.abs(+o.dataset.x - x) < 60 && Math.abs(+o.dataset.y - y) < 60).length;
+      f.dataset.x = x; f.dataset.y = y;
+      f.style.left = x + "px";
+      f.style.top = `calc(${y}px - ${near * 2.1}em)`;
+      $("#tokens").appendChild(f);
+      setTimeout(() => f.remove(), 1800);
+    }
+  });
+  if (gains || losses) {
+    const hint = H.sfxHint;
+    H.sfxHint = null;
+    if (hint) Sfx.play(hint);
+    else {
+      if (losses) Sfx.play("pay");
+      if (gains) Sfx.play("gain", losses ? 0.22 : 0);
+    }
+  }
 }
 
 function showHostToast(text, kind) {
@@ -1142,9 +1245,11 @@ function renderAll() {
   updateBoard();
   positionTokens();
   renderPanel();
+  moneyEffects();
   renderSpot();
   if (centerDice && state.dice.seq !== lastDiceSeq) {
     lastDiceSeq = state.dice.seq;
+    Sfx.play("dice");
     const p = state.players[state.dice.pid];
     $("#diceInfo").textContent = "";
     centerDice.land(state.dice.d).then(() => {
@@ -1383,6 +1488,10 @@ function renderLobby() {
 }
 
 function startPlaying() {
+  Sfx.unlock();
+  lastMoney = {};
+  Object.keys(moneyFx).forEach(k => delete moneyFx[k]);
+  $("#playersBox").innerHTML = "";
   state.phase = "play";
   showScreen("game");
   renderBoard();
@@ -1414,6 +1523,10 @@ function init() {
     if (v === 1) { save(); state.phase = "setup"; location.reload(); }
   });
   $("#controlBtn").addEventListener("click", () => { H.forceControl = !H.forceControl; renderPanel(); });
+  const soundBtn = $("#soundBtn");
+  const soundLabel = () => { soundBtn.textContent = "Lyd: " + (Sfx.enabled ? "til" : "fra"); };
+  soundLabel();
+  soundBtn.addEventListener("click", () => { Sfx.setEnabled(!Sfx.enabled); soundLabel(); });
   $("#manageBtn").addEventListener("click", openHostManager);
   $("#mapBtn").addEventListener("click", () => openMapModal());
   window.addEventListener("resize", fitBoard);
