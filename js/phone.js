@@ -37,6 +37,7 @@ function connect(c) {
       if (!m || typeof m !== "object") return;
       if (m.t === "view") { V = m; onView(); }
       else if (m.t === "error") showToast(m.msg, "minus");
+      else if (m.t === "bye") setTimeout(() => client.reconnect(), 1500);
     }
   });
 }

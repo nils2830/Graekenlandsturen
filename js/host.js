@@ -1295,6 +1295,7 @@ function init() {
   window.addEventListener("resize", fitBoard);
   if (window.ResizeObserver) new ResizeObserver(fitBoard).observe($("#boardWrap"));
   window.addEventListener("beforeunload", e => { if (state.phase === "play") { save(); e.preventDefault(); e.returnValue = ""; } });
+  window.addEventListener("pagehide", () => { if (H.net) for (const id of H.conns.keys()) H.net.send(id, { t: "bye" }); });
   showSetup();
 }
 init();
