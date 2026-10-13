@@ -1,12 +1,12 @@
 agora: uændret (Attica 06-13 Athens 22 View from Acropolis Hill - Museum of Ancient Agora.jpg)
 arvanitia: uændret (Arvanitia Beach.jpg)
 karathona: uændret (KARATHONAS BEACH-NAFPLIO GREECE - panoramio.jpg)
-havn: INTET BILLEDE FUNDET
-gamlebydel: INTET BILLEDE FUNDET
-syntagma: search:Nafplio Syntagma square -collage -photocollage -> Αρχαιολογικό Μουσείο Ναυπλίου 7715.jpg [CC BY-SA 4.0]
+havn: search:Nafplio port -> Robert Smirke - Nafplio, From the Port of the Argolic Gulf Near Argos - B1977.14.474 - Yale Center for British Art.jpg [CC0]
+gamlebydel: search:Nafplio alley -> Nafplion Ναύπλιο (3627677967).jpg [CC BY-SA 2.0]
+syntagma: uændret (Αρχαιολογικό Μουσείο Ναυπλίου 7715.jpg)
 spyridon: uændret (Ναός Αγίου Σπυρίδωνα, Ναύπλιο 7934.jpg)
 kolokotronis: uændret (Kolokotronis01.jpg)
-bourtzi: search:Bourtzi Nafplion -Karystos -Euboea -> Bourtzi, Nafplion - 2.jpg [CC BY-SA 4.0]
+bourtzi: uændret (Bourtzi, Nafplion - 2.jpg)
 taverna: uændret (Petra metzes.jpg)
 akronafplia: uændret (The view from Palamidi Castle.jpg)
 palamidi: uændret (Palamidi fortress (Nafplio, Greece).jpg)
@@ -17,17 +17,17 @@ epidauros: uændret (The great theater of Epidaurus, designed by Polykleitos the
 kanal: uændret (Corinth Canal in Greece.jpg)
 monastiraki: uændret (Monastiraki Square on June 6, 2020.jpg)
 plaka: uændret (Carrer del barri de Plaka, Atenes.JPG)
-evzoner: search:Evzones Tomb of the Unknown Soldier Athens -> Foot foot Evzones Athens.jpg [CC0]
+evzoner: uændret (Foot foot Evzones Athens.jpg)
 piraeus: uændret (Λιμάνι του Πειραιά.jpg)
-ostraka: search:Ostraka Themistocles Agora Museum -> Ostraka against Themistocles, 482 BC, Agora Museum Athens, 080635.jpg [CC BY-SA 4.0]
+ostraka: uændret (Ostraka against Themistocles, 482 BC, Agora Museum Athens, 080635.jpg)
 hefaistos: uændret (Temple of Hephaestus viewed from the Stoa of Attalos in Athens, Greece.jpg)
 zeus: uændret (L'Olympieion (Athènes) (30776483926).jpg)
 stadion: uændret (Panathenaic Stadium - panoramio (1).jpg)
 metro: uændret (Station Métro Syntagma - Athènes (GRA1) - 2022-03-27 - 2.jpg)
-akropolismuseet: search:Acropolis Museum building exterior Athens -logo -> The Byzantine church of Agios Eleftherios - Panagia Gorgoepikoos (Little Metropolis) in Athens, Greece (30).jpg [CC BY-SA 4.0]
+akropolismuseet: search:New Acropolis Museum -> New Acropolis Museum 5.jpg [CC BY-SA 3.0]
 parthenon: uændret (The Parthenon in Athens.jpg)
 pythia: uændret (Eugène Delacroix - Lycurgus Consulting the Pythia - Google Art Project.jpg)
-olympiere: wiki:Mount Olympus -> Olympus National Park 30.jpg [CC BY-SA 4.0]
+olympiere: uændret (Olympus National Park 30.jpg)
 themistokles: uændret (Illustrerad Verldshistoria band I Ill 116.png)
 sokrates: uændret (Socrates Louvre.jpg)
 pnyx: uændret (Pnyx Bema 2.jpg)
@@ -36,7 +36,7 @@ otto: uændret (Prinz Otto von Bayern Koenig von Griechenland 1833.jpg)
 perikles: uændret (Pericles Pio-Clementino Inv269 n2.jpg)
 maske: uændret (Athens — Mask of Agamemnon.jpg)
 bouboulina: uændret (Bouboulina.JPG)
-kolokotronisstatue: search:Kolokotronis statue -> Kolokotronis statue Athens 1.jpg [CC BY-SA 3.0]
+kolokotronisstatue: uændret (Kolokotronis statue Athens 1.jpg)
 dionysosteater: uændret (Athen Akropolis (18512008726).jpg)
 odysseus: uændret (Head Odysseus MAR Sperlonga.jpg)
 feidippides: uændret (Statue of Pheidippides along the Marathon Road.jpg)
@@ -57,4 +57,4 @@ persefone: uændret (Terracotta votive plaque from Eleusis, 450 BC, NAMA, 190875
 paaskeaeg: uændret (Red easter egg.jpg)
 karyatider: uændret (Erechtheum Acropolis Athens.jpg)
 moussaka: uændret (MussakasMeMelitsanesKePatates01.JPG)
-flag: wiki:Flag of Greece -> Flag of Greece.svg [Public domain]
+flag: uændret (Flag of Greece.svg)

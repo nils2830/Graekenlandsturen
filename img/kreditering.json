@@ -27,13 +27,13 @@
   "via": "wiki:Acronauplia"
  },
  "akropolismuseet": {
-  "artist": "George E. Koronaios from Athens, Greece.",
-  "file": "The Byzantine church of Agios Eleftherios - Panagia Gorgoepikoos (Little Metropolis) in Athens, Greece (30).jpg",
-  "key": "{\"id\": \"akropolismuseet\", \"search\": \"Acropolis Museum building exterior Athens -logo\"}",
-  "license": "CC BY-SA 4.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:The_Byzantine_church_of_Agios_Eleftherios_-_Panagia_Gorgoepikoos_(Little_Metropolis)_in_Athens,_Greece_(30).jpg",
-  "via": "search:Acropolis Museum building exterior Athens -logo"
+  "artist": "Tomisti",
+  "file": "New Acropolis Museum 5.jpg",
+  "key": "{\"id\": \"akropolismuseet\", \"search\": [\"New Acropolis Museum\", \"Acropolis Museum Tschumi\", \"Acropolis Museum glass floor\", \"Acropolis Museum Athens\"]}",
+  "license": "CC BY-SA 3.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:New_Acropolis_Museum_5.jpg",
+  "via": "search:New Acropolis Museum"
  },
  "apollon": {
   "artist": "Berthold Werner",
@@ -134,14 +134,23 @@
   "page": "https://commons.wikimedia.org/wiki/File:Cafe-frape-glas-holztisch-unscharf.jpg",
   "via": "wiki:Frappé coffee"
  },
+ "gamlebydel": {
+  "artist": "pmandrav",
+  "file": "Nafplion Ναύπλιο (3627677967).jpg",
+  "key": "{\"id\": \"gamlebydel\", \"search\": [\"Nafplio alley\", \"Nafplion street\", \"Nafplio old city\", \"Nafplio bougainvillea\"]}",
+  "license": "CC BY-SA 2.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Nafplion_%CE%9D%CE%B1%CF%8D%CF%80%CE%BB%CE%B9%CE%BF_(3627677967).jpg",
+  "via": "search:Nafplio alley"
+ },
  "havn": {
-  "artist": "Apaleutos25",
-  "file": "Δημαρχείο Ναυπλίου, Nafplio Town Hall.jpg",
-  "key": "{\"id\": \"havn\", \"search\": \"Nafplio harbour Bourtzi\", \"wiki\": \"Nafplio\"}",
-  "license": "CC BY-SA 4.0",
-  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:%CE%94%CE%B7%CE%BC%CE%B1%CF%81%CF%87%CE%B5%CE%AF%CE%BF_%CE%9D%CE%B1%CF%85%CF%80%CE%BB%CE%AF%CE%BF%CF%85,_Nafplio_Town_Hall.jpg",
-  "via": "wiki:Nafplio"
+  "artist": "Robert Smirke",
+  "file": "Robert Smirke - Nafplio, From the Port of the Argolic Gulf Near Argos - B1977.14.474 - Yale Center for British Art.jpg",
+  "key": "{\"id\": \"havn\", \"search\": [\"Nafplio port\", \"Nafplion harbour\", \"Nafplio waterfront\", \"Nafplio panorama\"]}",
+  "license": "CC0",
+  "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "page": "https://commons.wikimedia.org/wiki/File:Robert_Smirke_-_Nafplio,_From_the_Port_of_the_Argolic_Gulf_Near_Argos_-_B1977.14.474_-_Yale_Center_for_British_Art.jpg",
+  "via": "search:Nafplio port"
  },
  "hefaistos": {
   "artist": "Julian Lupyan",
