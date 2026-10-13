@@ -16,7 +16,7 @@ IMG = os.path.join(ROOT, "img")
 UA = "PolisBraetspil/1.0 (https://github.com/nils2830/Test; familiebraetspil)"
 COMMONS = "https://commons.wikimedia.org/w/api.php"
 ENWIKI = "https://en.wikipedia.org/w/api.php"
-BAD_WORDS = ("map", "logo", "plan", "diagram", "coat of arms", "seal", "signature", "kart")
+BAD_WORDS = ("map", "logo", "collage", "plan", "diagram", "coat of arms", "seal", "signature", "kart")
 
 def get_json(url, params):
     params = dict(params, format="json", formatversion="2")
@@ -45,14 +45,15 @@ def strip_html(s):
     s = re.sub(r"<[^>]+>", "", s or "")
     return re.sub(r"\s+", " ", html.unescape(s)).strip()
 
-def commons_info(title):
+def commons_info(title, allow_svg=False):
     d = get_json(COMMONS, {"action": "query", "titles": title, "prop": "imageinfo",
                            "iiprop": "url|extmetadata|mime|size", "iiurlwidth": "1200"})
     page = d["query"]["pages"][0]
     if page.get("missing") or "imageinfo" not in page:
         return None
     ii = page["imageinfo"][0]
-    if ii.get("mime") not in ("image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/tiff"):
+    ok = ("image/jpeg", "image/png", "image/webp", "image/tiff") + (("image/svg+xml",) if allow_svg else ())
+    if ii.get("mime") not in ok:
         return None
     meta = ii.get("extmetadata", {})
     return {
@@ -64,13 +65,13 @@ def commons_info(title):
         "licenseUrl": meta.get("LicenseUrl", {}).get("value", ""),
     }
 
-def from_wiki(title):
+def from_wiki(title, allow_svg=False):
     d = get_json(ENWIKI, {"action": "query", "titles": title, "prop": "pageimages",
                           "piprop": "name", "redirects": "1"})
     pages = d["query"].get("pages", [])
     if not pages or pages[0].get("missing") or "pageimage" not in pages[0]:
         return None
-    return commons_info("File:" + pages[0]["pageimage"])
+    return commons_info("File:" + pages[0]["pageimage"], allow_svg)
 
 def from_search(q):
     d = get_json(COMMONS, {"action": "query", "list": "search", "srnamespace": "6",
@@ -119,7 +120,7 @@ def main():
             if entry.get("file"):
                 info, via = commons_info("File:" + entry["file"]), "file"
             if not info and entry.get("wiki"):
-                info, via = from_wiki(entry["wiki"]), "wiki:" + entry["wiki"]
+                info, via = from_wiki(entry["wiki"], entry.get("svg", False)), "wiki:" + entry["wiki"]
             if not info and entry.get("search"):
                 info, via = from_search(entry["search"]), "search:" + entry["search"]
             if not info:
