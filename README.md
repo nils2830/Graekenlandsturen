@@ -18,7 +18,7 @@ Spillet er en ren hjemmeside uden server, så det kan ligge gratis på GitHub Pa
 1. Gå til repoet på GitHub: **Settings → General**, rul ned til **Danger Zone** og vælg **Change visibility → Public**. GitHub Pages er kun gratis for offentlige repoer.
 2. Gå til **Settings → Pages**. Under **Build and deployment** vælges **Deploy from a branch**.
 3. Vælg grenen med spillet (for eksempel `main` efter en merge, eller `claude/upbeat-goodall-pyeaec`) og mappen **/ (root)**, og tryk **Save**.
-4. Efter et par minutter ligger spillet på `https://nils2830.github.io/Test/`. Åbn den adresse på computeren.
+4. Efter et par minutter ligger spillet på `[https://nils2830.github.io/Test/](https://nils2830.github.io/Graekenlandsturen/)`. Åbn den adresse på computeren.
 
 Vil I hellere holde repoet privat, kan mappen i stedet trækkes ind på [Netlify Drop](https://app.netlify.com/drop) med en gratis konto.
 
